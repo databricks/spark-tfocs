@@ -18,14 +18,13 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 import scala.collection.mutable.ArrayBuffer
-import scala.util.control.Breaks._
 
 import org.apache.spark.Logging
 
 object TFOCS extends Logging {
 
   /**
-   * Minimize an objective function using accelerated proximal gradient descent.
+   * Optimize an objective function using accelerated proximal gradient descent.
    * The implementation is based on TFOCS [[http://cvxr.com/tfocs]], described in Becker, Candes,
    * and Grant 2010. A limited but useful subset of the TFOCS feature set is implemented, including
    * support for composite loss functions, the Auslender and Teboulle acceleration method,
@@ -44,14 +43,17 @@ object TFOCS extends Logging {
    *        is above 1, the algorithm converges when the magnitude of the relative difference
    *        between successive 'x' vectors drops below convergenceTol. But if the magnitude of 'x'
    *        is 1 or below, the magnitude of the absolute difference between successive 'x' vectors
-   *        is used instead.
-   * @param rows The VectorSpace used for computation on row vectors.
+   *        is tested for convergence instead of the magnitude of the relative difference.
+   * @param rows The VectorSpace used for computation on row vectors. The 'x' vectors to be
+   *        optimized belong to this row VectorSpace.
    * @param cols The VectorSpace used for computation on column vectors.
+   * @tparam R Type representing a row vector.
+   * @tparam C Type representing a column vector.
    *
-   * @return A tuple containing two elements. The first element is an R vector containing the
-   *         minimizing values. The second element contains the objective function history.
+   * @return A tuple containing two elements. The first element is a row vector containing the
+   *         minimizing 'x' values. The second element contains the objective function history.
    */
-  def minimize[R, C](
+  def optimize[R, C](
     f: SmoothFunction[C],
     A: LinearFunction[R, C],
     h: ProxCapableFunction[R],
@@ -140,7 +142,7 @@ object TFOCS extends Logging {
         }
         cols.cache(a_x)
 
-        // If a nondivergence criterion is violated, adjust the Lipschitz estimate and re-run the
+        // If a non divergence criterion is violated, adjust the Lipschitz estimate and re-run the
         // inner (backtracking) loop.
         isBacktracking = false
         if (beta < 1.0) {
@@ -153,12 +155,12 @@ object TFOCS extends Logging {
             // Compute localL using one of two non divergence criteria. The backtrack_simple
             // criterion is more accurate but prone to numerical instability.
             var localL = if (backtrack_simple) {
-              val Value(Some(f_x_), _) = f(a_x, Mode(true, false))
-              f_x = Some(f_x_)
+              f_x = Some(f(a_x))
               backtrack_simple =
-                (math.abs(f_y - f_x_) >= backtrack_tol * math.max(math.abs(f_x_), math.abs(f_y)))
+                (math.abs(f_y - f_x.get) >=
+                  backtrack_tol * math.max(math.abs(f_x.get), math.abs(f_y)))
               val q_x = f_y + rows.dot(xy, g_y) + 0.5 * L * xy_sq
-              L + 2.0 * math.max(f_x_ - q_x, 0.0) / xy_sq
+              L + 2.0 * math.max(f_x.get - q_x, 0.0) / xy_sq
             } else {
               val Value(_, Some(g_Ax)) = f(a_x, Mode(false, true))
               2.0 * cols.dot(cols.combine(1.0, a_x, -1.0, a_y),
@@ -184,8 +186,8 @@ object TFOCS extends Logging {
       // Track the loss history using the smooth function value at x (f_x) if available. Otherwise
       // use f_y. The prox capable function is included in this loss computation.
       lossHistory.append(f_x match {
-        case Some(f) => f + h(x, 0.0, Mode(true, false)).f.get
-        case _ => f_y + h(y, 0.0, Mode(true, false)).f.get
+        case Some(f) => f + h(x)
+        case _ => f_y + h(y)
       })
 
       // Restart acceleration if indicated by the gradient test from O'Donoghue and Candes 2013.
