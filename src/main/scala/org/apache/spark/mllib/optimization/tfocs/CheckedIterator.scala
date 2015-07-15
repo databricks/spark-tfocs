@@ -17,9 +17,23 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-/**
- * Evaluation mode.
- * @param f Whether to compute the function value.
- * @param g Whether to compute the function gradient.
- */
-case class Mode(f: Boolean, g: Boolean)
+class CheckedIterator[A](self: Iterator[A]) {
+
+  def checkedZip[B](that: Iterator[B]): Iterator[(A, B)] =
+    new Iterator[(A, B)] {
+      def hasNext: Boolean = (self.hasNext, that.hasNext) match {
+        case (true, true) => true
+        case (false, false) => false
+        case _ => throw new IllegalArgumentException("Can only checkedZip Iterators with the " +
+          "same number of elements")
+      }
+      def next(): (A, B) = (self.next(), that.next())
+    }
+}
+
+object CheckedIterator {
+
+  implicit def iteratorToCheckedIterator[T](iterator: Iterator[T]): CheckedIterator[T] = {
+    new CheckedIterator(iterator)
+  }
+}

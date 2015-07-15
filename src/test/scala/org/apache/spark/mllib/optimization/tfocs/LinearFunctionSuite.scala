@@ -19,32 +19,33 @@ package org.apache.spark.mllib.optimization.tfocs
 
 import org.scalatest.{ FunSuite, Matchers }
 
+import org.apache.spark.SparkException
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 
 class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext with Matchers {
 
-  lazy val matrix2 = sc.parallelize(Array(Vectors.dense(1.0, 2.0, 3.0),
+  lazy val matrix = sc.parallelize(Array(Vectors.dense(1.0, 2.0, 3.0),
     Vectors.dense(4.0, 5.0, 6.0)))
 
   test("ProductVectorRDDDouble multiplies properly") {
 
     assert(Array(50.0, 122.0).deep ==
-      new ProductVectorRDDDouble(matrix2)(Vectors.dense(7.0, 8.0, 9.0)).collect().deep,
+      new ProductVectorRDDDouble(matrix)(Vectors.dense(7.0, 8.0, 9.0)).collect().deep,
       "should return the correct product")
   }
 
   test("TransposeProductVectorRDDDouble multiplies properly") {
 
     assert(Vectors.dense(29.0, 40.0, 51.0) ==
-      new TransposeProductVectorRDDDouble(matrix2)(sc.parallelize(Array(5.0, 6.0))),
+      new TransposeProductVectorRDDDouble(matrix)(sc.parallelize(Array(5.0, 6.0))),
       "should return the correct product")
   }
 
   test("ProductVectorRDDVector multiplies properly") {
 
     assert(Array(50.0, 122.0).deep ==
-      new ProductVectorRDDVector(matrix2)(
+      new ProductVectorRDDVector(matrix)(
         Vectors.dense(7.0, 8.0, 9.0)).flatMap(_.toArray).collect().deep,
       "should return the correct product")
   }
@@ -52,9 +53,17 @@ class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext with Match
   test("TransposeProductVectorRDDVector multiplies properly") {
 
     assert(Vectors.dense(29.0, 40.0, 51.0) ==
-      new TransposeProductVectorRDDVector(matrix2)(sc.parallelize(Array(Vectors.dense(5.0),
+      new TransposeProductVectorRDDVector(matrix)(sc.parallelize(Array(Vectors.dense(5.0),
         Vectors.dense(6.0)), 2)),
       "should return the correct product")
+  }
+
+  test("TransposeProductVectorRDDVector checks for mismatched partition vectors") {
+
+    a[SparkException] should be thrownBy {
+      new TransposeProductVectorRDDVector(matrix)(sc.parallelize(Array(Vectors.dense(5.0, 6.0),
+        Vectors.zeros(0)), 2))
+    }
   }
 
 }

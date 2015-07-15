@@ -23,17 +23,19 @@ import org.apache.spark.rdd.RDD
 
 /**
  * Trait for a vector space.
+ *
+ * @tparam X Type representing a vector.
  */
-trait VectorSpace[V] {
+trait VectorSpace[X] {
 
   /** Linear combination of two vectors. */
-  def combine(alpha: Double, a: V, beta: Double, b: V): V
+  def combine(alpha: Double, a: X, beta: Double, b: X): X
 
   /** Inner product of two vectors. */
-  def dot(a: V, b: V): Double
+  def dot(a: X, b: X): Double
 
   /** Cache a vector. */
-  def cache(a: V): Unit = {}
+  def cache(a: X): Unit = {}
 }
 
 object VectorSpace {

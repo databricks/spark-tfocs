@@ -21,12 +21,15 @@ import org.apache.spark.mllib.linalg.{ DenseVector, Vector, Vectors }
 
 /**
  * Trait for prox-capable functions.
+ *
+ * @tparam X Type representing a vector on which to evaluate the function.
  */
 trait ProxCapableFunction[X] {
   /**
-   * Evaluates this function at x with smoothing parameter t.
+   * Evaluates this function at x with smoothing parameter t, returning the minimum value and
+   * minimizing vector.
    */
-  def apply(x: X, t: Double, mode: Mode): Value[Double, X]
+  def apply(x: X, t: Double, mode: Mode): Value[X]
 
   /**
    * Evaluates this function at x.
@@ -35,14 +38,14 @@ trait ProxCapableFunction[X] {
 }
 
 /** A function that always returns zero. */
-class ZeroProxVector extends ProxCapableFunction[Vector] {
-  override def apply(x: Vector, t: Double, mode: Mode): Value[Double, Vector] =
+class ProxZeroVector extends ProxCapableFunction[Vector] {
+  override def apply(x: Vector, t: Double, mode: Mode): Value[Vector] =
     Value(Some(0.0), Some(x))
 }
 
 /** A function that returns the L1 norm. */
-class L1ProxVector(scale: Double) extends ProxCapableFunction[Vector] {
-  override def apply(x: Vector, t: Double, mode: Mode): Value[Double, Vector] = {
+class ProxL1Vector(scale: Double) extends ProxCapableFunction[Vector] {
+  override def apply(x: Vector, t: Double, mode: Mode): Value[Vector] = {
     val shrinkage = scale * t
     val g = shrinkage match {
       case 0.0 => x

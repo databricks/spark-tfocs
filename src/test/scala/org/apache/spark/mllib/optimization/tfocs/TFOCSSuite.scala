@@ -21,6 +21,7 @@ import org.scalatest.{ FunSuite, Matchers }
 
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.util.MLlibTestSparkContext
+import org.apache.spark.mllib.util.TestingUtils._
 
 class TFOCSSuite extends FunSuite with MLlibTestSparkContext with Matchers {
 
@@ -28,7 +29,7 @@ class TFOCSSuite extends FunSuite with MLlibTestSparkContext with Matchers {
     "TFOCS") {
 
     // The test below checks that the results match those of the following TFOCS matlab program
-    // (using TFOCS version 469466db9053f986b3f7e3e7d6b8ffe2f971f35b):
+    // (using TFOCS version 1945a771f315acd4cc6eba638b5c01fb52ee7aaa):
     //
     // A = [ -0.8307    0.2722    0.1947   -0.3545    0.3944   -0.5557   -0.2904    0.5337   -0.1190    0.0657;
     //        0.2209   -0.2547   -0.4508   -0.1773   -0.0596   -0.2363    0.1157   -0.2136    0.4888   -0.2178;
@@ -53,14 +54,14 @@ class TFOCSSuite extends FunSuite with MLlibTestSparkContext with Matchers {
       Vectors.dense(0.4056, -0.6623, 0.7984, 0.3474, 0.0084, -0.0191, 0.5596, -0.4359, 0.8581,
         0.0490),
       Vectors.dense(-0.2341, -0.5792, 0.3272, -0.7748, 0.6396, -0.7910, -0.6239, -0.6901, 0.0249,
-        0.6624)))
-    val b = sc.parallelize(Array(0.1614, -0.1662, 0.4224, -0.2945, -0.3866))
+        0.6624)), 1)
+    val b = sc.parallelize(Array(Vectors.dense(0.1614, -0.1662, 0.4224, -0.2945, -0.3866)), 1)
     val lambda = 0.0298
     val x0 = Vectors.zeros(10)
 
-    val (x, lossHistory) = TFOCS.minimize(new SquaredErrorRDDDouble(b),
-      new ProductVectorRDDDouble(A),
-      new L1ProxVector(lambda),
+    val (x, lossHistory) = TFOCS.optimize(new SmoothQuadRDDVector(b),
+      new ProductVectorRDDVector(A),
+      new ProxL1Vector(lambda),
       x0)
 
     val expectedX = Vectors.dense(-0.049755786974910, 0, 0.076369527414210, 0, 0, 0, 0,
@@ -88,11 +89,10 @@ class TFOCSSuite extends FunSuite with MLlibTestSparkContext with Matchers {
       0.035448898164430, 0.035448898164428, 0.035448898164427, 0.035448898164426, 0.035448898164425,
       0.035448898164425, 0.035448898164425, 0.035448898164425, 0.035448898164425)
 
-    assert(x.toArray.zip(expectedX.toArray).map(xs => math.abs((xs._1 - xs._2) / xs._2)).max < 1e-6,
+    assert(x ~= expectedX relTol 1e-6,
       "Each weight vector element should match the expected value, within tolerance.")
 
-    assert(lossHistory.zip(expectedLossHistory).map(hs => math.abs((hs._1 - hs._2) / hs._2)).max
-      < 1e-12,
+    assert(Vectors.dense(lossHistory) ~= Vectors.dense(expectedLossHistory) relTol 1e-12,
       "The loss value on each iteration should match the expected value, within tolerance.")
   }
 }
