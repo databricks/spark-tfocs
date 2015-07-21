@@ -18,7 +18,6 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 import org.apache.spark.mllib.linalg.{ DenseVector, Vectors, Vector }
-import org.apache.spark.mllib.linalg.BLAS
 import org.apache.spark.mllib.optimization.tfocs.VectorRDDFunctions._
 import org.apache.spark.rdd.RDD
 
