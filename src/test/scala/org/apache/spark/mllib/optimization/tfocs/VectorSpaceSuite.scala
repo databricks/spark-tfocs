@@ -17,12 +17,12 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-import org.scalatest.{ FunSuite, Matchers }
+import org.scalatest.FunSuite
 
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 
-class VectorSpaceSuite extends FunSuite with MLlibTestSparkContext with Matchers {
+class VectorSpaceSuite extends FunSuite with MLlibTestSparkContext {
 
   test("SimpleVectorSpace is implemented properly") {
     assert(Vectors.dense(22.2, 27.3) ==

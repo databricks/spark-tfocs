@@ -17,13 +17,13 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-import org.scalatest.{ FunSuite, Matchers }
+import org.scalatest.FunSuite
 
 import org.apache.spark.SparkException
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 
-class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext with Matchers {
+class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext {
 
   lazy val matrix = sc.parallelize(Array(Vectors.dense(1.0, 2.0, 3.0),
     Vectors.dense(4.0, 5.0, 6.0)))
@@ -60,9 +60,9 @@ class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext with Match
 
   test("TransposeProductVectorRDDVector checks for mismatched partition vectors") {
 
-    a[SparkException] should be thrownBy {
-      new TransposeProductVectorRDDVector(matrix)(sc.parallelize(Array(Vectors.dense(5.0, 6.0),
-        Vectors.zeros(0)), 2))
+    intercept[SparkException] {
+      new TransposeProductVectorRDDVector(matrix)(
+        sc.parallelize(Array(Vectors.dense(5.0, 6.0), Vectors.zeros(0)), 2))
     }
   }
 
