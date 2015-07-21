@@ -17,13 +17,13 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-import org.scalatest.{ FunSuite, Matchers }
+import org.scalatest.FunSuite
 
 import org.apache.spark.SparkException
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 
-class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext with Matchers {
+class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
 
   test("The SmoothQuadRDDDouble implementation should return the expected value and gradient") {
 
@@ -58,7 +58,7 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext with Match
     val x0 = sc.parallelize(Array(Vectors.dense(1.0), Vectors.dense(2.0, 3.0)), 2)
     val x = sc.parallelize(Array(Vectors.dense(10.0, 20.0), Vectors.dense(30.0)), 2)
 
-    a[SparkException] should be thrownBy {
+    intercept[SparkException] {
       new SmoothQuadRDDVector(x0)(x, Mode(true, true))
     }
   }

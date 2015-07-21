@@ -17,12 +17,13 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-import org.scalatest.{ FunSuite, Matchers }
+import org.scalatest.FunSuite
 
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.util.MLlibTestSparkContext
+import org.apache.spark.mllib.util.TestingUtils._
 
-class ProxCapableFunctionSuite extends FunSuite with Matchers {
+class ProxCapableFunctionSuite extends FunSuite {
 
   test("The ProxZeroVector implementation should return the expected value and vector") {
     val x = Vectors.dense(10.0, -20.0, 30.0)
@@ -37,7 +38,7 @@ class ProxCapableFunctionSuite extends FunSuite with Matchers {
     assert(new ProxL1Vector(1.1)(x) == 66.0, "value should be correct")
     val Value(Some(f), Some(g)) = new ProxL1Vector(1.1)(x, 1.5, Mode(true, true))
     assert(f == 60.555, "minimum value should be correct")
-    assert(g == Vectors.dense(8.35, -18.35, 28.349999999999998),
+    assert(g ~= Vectors.dense(8.35, -18.35, 28.34999999) relTol 1e-6,
       "minimizing value should be correct")
   }
 }
