@@ -105,16 +105,17 @@ class TransposeProductVectorRDDVector(@transient private val matrix: RDD[Vector]
 
   override def apply(x: RDD[Vector]): Vector = {
     matrix.zipPartitions(x)({ (matrixPartition, xPartition) =>
-      Iterator.single(matrixPartition.zip(xPartition.next.toArray.toIterator).aggregate(Vectors.zeros(n))(
-        seqop = (sum, row) => {
-          BLAS.axpy(row._2, row._1, sum)
-          sum
-        },
-        combop = (s1, s2) => {
-          BLAS.axpy(1.0, s2, s1)
-          s1
-        }
-      ))
+      Iterator.single(matrixPartition.zip(xPartition.next.toArray.toIterator)
+        .aggregate(Vectors.zeros(n))(
+          seqop = (sum, row) => {
+            BLAS.axpy(row._2, row._1, sum)
+            sum
+          },
+          combop = (s1, s2) => {
+            BLAS.axpy(1.0, s2, s1)
+            s1
+          }
+        ))
     }).treeAggregate(Vectors.zeros(n))(
       seqOp = (s1, s2) => {
         BLAS.axpy(1.0, s2, s1)
