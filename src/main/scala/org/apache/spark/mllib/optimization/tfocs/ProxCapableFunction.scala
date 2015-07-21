@@ -94,5 +94,5 @@ class ProjBoxVector(l: Vector, u: Vector) extends ProxCapableFunction[Vector] {
   }
 
   override def apply(x: Vector): Double = if (x.toArray.zip(limits).exists(y =>
-    y._1 > y._2._2 || y._1 < y._2._1)) Double.PositiveInfinity else 0.0
+    y._1 > y._2._2 || y._1 < y._2._1)) { Double.PositiveInfinity } else { 0.0 }
 }
