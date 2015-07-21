@@ -19,7 +19,7 @@ package org.apache.spark.mllib.optimization.tfocs
 
 import org.apache.spark.mllib.linalg.BLAS
 import org.apache.spark.mllib.linalg.{ DenseVector, Vector, Vectors }
-import org.apache.spark.mllib.optimization.tfocs.CheckedIterator._
+import org.apache.spark.mllib.optimization.tfocs.CheckedIteratorFunctions._
 import org.apache.spark.rdd.RDD
 
 /**
