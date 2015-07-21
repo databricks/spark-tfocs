@@ -56,3 +56,38 @@ class ProxL1Vector(scale: Double) extends ProxCapableFunction[Vector] {
     Value(f, Some(g))
   }
 }
+
+/** A function that projects onto the positive orthant. */
+class ProjRPlusVector extends ProxCapableFunction[Vector] {
+  override def apply(x: Vector, t: Double, mode: Mode): Value[Vector] = {
+
+    val g = if (mode.g) {
+      Some(new DenseVector(x.toArray.map(math.max(_, 0.0))))
+    } else {
+      None
+    }
+
+    Value(Some(0.0), g)
+  }
+}
+
+/**
+ * A function that projects onto a simple box defined by upper and lower limits on each vector
+ * element.
+ */
+class ProjBoxVector(l: Vector, u: Vector) extends ProxCapableFunction[Vector] {
+
+  val limits = l.toArray.zip(u.toArray)
+
+  override def apply(x: Vector, t: Double, mode: Mode): Value[Vector] = {
+
+    val g = if (mode.g) {
+      Some(new DenseVector(x.toArray.zip(limits).map(y =>
+        math.min(y._2._2, math.max(y._1, y._2._1)))))
+    } else {
+      None
+    }
+
+    Value(Some(0.0), g)
+  }
+}

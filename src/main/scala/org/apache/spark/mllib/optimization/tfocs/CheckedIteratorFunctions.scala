@@ -18,7 +18,7 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 /** Helpers to perform validation when zipping two iterators. */
-private[tfocs] class CheckedIterator[A](self: Iterator[A]) {
+private[tfocs] class CheckedIteratorFunctions[A](self: Iterator[A]) {
 
   def checkedZip[B](that: Iterator[B]): Iterator[(A, B)] =
     new Iterator[(A, B)] {
@@ -32,9 +32,8 @@ private[tfocs] class CheckedIterator[A](self: Iterator[A]) {
     }
 }
 
-private[tfocs] object CheckedIterator {
+private[tfocs] object CheckedIteratorFunctions {
 
-  implicit def iteratorToCheckedIterator[T](iterator: Iterator[T]): CheckedIterator[T] = {
-    new CheckedIterator(iterator)
-  }
+  implicit def iteratorToCheckedIterator[T](iterator: Iterator[T]): CheckedIteratorFunctions[T] =
+    new CheckedIteratorFunctions(iterator)
 }
