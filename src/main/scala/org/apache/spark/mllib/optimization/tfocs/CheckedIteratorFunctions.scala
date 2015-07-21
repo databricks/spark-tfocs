@@ -17,7 +17,7 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-class CheckedIterator[A](self: Iterator[A]) {
+class CheckedIteratorFunctions[A](self: Iterator[A]) {
 
   def checkedZip[B](that: Iterator[B]): Iterator[(A, B)] =
     new Iterator[(A, B)] {
@@ -31,9 +31,8 @@ class CheckedIterator[A](self: Iterator[A]) {
     }
 }
 
-object CheckedIterator {
+object CheckedIteratorFunctions {
 
-  implicit def iteratorToCheckedIterator[T](iterator: Iterator[T]): CheckedIterator[T] = {
-    new CheckedIterator(iterator)
-  }
+  implicit def iteratorToCheckedIterator[T](iterator: Iterator[T]): CheckedIteratorFunctions[T] =
+    new CheckedIteratorFunctions(iterator)
 }

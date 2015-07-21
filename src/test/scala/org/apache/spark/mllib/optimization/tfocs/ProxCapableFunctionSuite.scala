@@ -40,4 +40,38 @@ class ProxCapableFunctionSuite extends FunSuite with Matchers {
     assert(g == Vectors.dense(8.35, -18.35, 28.349999999999998),
       "minimizing value should be correct")
   }
+
+  test("The ProjRPlusVector implementation should return the expected value and vector") {
+
+    // Already nonnegative.
+    val x1 = Vectors.dense(10.0, 20.0, 30.0)
+    val Value(Some(f1), Some(g1)) = new ProjRPlusVector()(x1, 1.0, Mode(true, true))
+    assert(f1 == 0.0, "value should be correct")
+    assert(g1 == x1, "vector should be correct")
+
+    // Some negative elements.
+    val x2 = Vectors.dense(-10.0, 20.0, -30.0)
+    val Value(Some(f2), Some(g2)) = new ProjRPlusVector()(x2, 1.0, Mode(true, true))
+    assert(f2 == 0.0, "value should be correct")
+    assert(g2 == Vectors.dense(0.0, 20.0, 0.0), "vector should be correct")
+  }
+
+  test("The ProjBoxVector implementation should return the expected value and vector") {
+
+    // Already within box.
+    val x1 = Vectors.dense(10.0, 20.0, 30.0)
+    val Value(Some(f1), Some(g1)) =
+      new ProjBoxVector(Vectors.dense(9, 19, 29),
+        Vectors.dense(11, 21, 31))(x1, 1.0, Mode(true, true))
+    assert(f1 == 0.0, "value should be correct")
+    assert(g1 == x1, "vector should be correct")
+
+    // Some elements outside box.
+    val x2 = Vectors.dense(10.0, 20.0, 30.0)
+    val Value(Some(f2), Some(g2)) =
+      new ProjBoxVector(Vectors.dense(10.5, 19, 29),
+        Vectors.dense(11, 21, 29.5))(x2, 1.0, Mode(true, true))
+    assert(f2 == 0.0, "value should be correct")
+    assert(g2 == Vectors.dense(10.5, 20, 29.5), "vector should be correct")
+  }
 }
