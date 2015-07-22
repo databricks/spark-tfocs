@@ -21,12 +21,15 @@ import org.apache.spark.mllib.linalg.{ DenseVector, Vector, Vectors }
 
 /**
  * Trait for prox-capable functions.
+ *
+ * @tparam X Type representing a vector on which to evaluate the function.
  */
 trait ProxCapableFunction[X] {
   /**
-   * Evaluates this function at x with smoothing parameter t.
+   * Evaluates this function at x with smoothing parameter t, returning the minimum value and
+   * minimizing vector.
    */
-  def apply(x: X, t: Double, mode: Mode): Value[Double, X]
+  def apply(x: X, t: Double, mode: Mode): Value[X]
 
   /**
    * Evaluates this function at x.
@@ -35,14 +38,14 @@ trait ProxCapableFunction[X] {
 }
 
 /** A function that always returns zero. */
-class ZeroProxVector extends ProxCapableFunction[Vector] {
-  override def apply(x: Vector, t: Double, mode: Mode): Value[Double, Vector] =
+class ProxZeroVector extends ProxCapableFunction[Vector] {
+  override def apply(x: Vector, t: Double, mode: Mode): Value[Vector] =
     Value(Some(0.0), Some(x))
 }
 
 /** A function that returns the L1 norm. */
-class L1ProxVector(scale: Double) extends ProxCapableFunction[Vector] {
-  override def apply(x: Vector, t: Double, mode: Mode): Value[Double, Vector] = {
+class ProxL1Vector(scale: Double) extends ProxCapableFunction[Vector] {
+  override def apply(x: Vector, t: Double, mode: Mode): Value[Vector] = {
     val shrinkage = scale * t
     val g = shrinkage match {
       case 0.0 => x
@@ -52,4 +55,44 @@ class L1ProxVector(scale: Double) extends ProxCapableFunction[Vector] {
     val f = if (mode.f) Some(scale * Vectors.norm(g, 1)) else None
     Value(f, Some(g))
   }
+}
+
+/** A function that projects onto the positive orthant. */
+class ProjRPlusVector extends ProxCapableFunction[Vector] {
+  override def apply(x: Vector, t: Double, mode: Mode): Value[Vector] = {
+
+    val g = if (mode.g) {
+      Some(new DenseVector(x.toArray.map(math.max(_, 0.0))))
+    } else {
+      None
+    }
+
+    Value(Some(0.0), g)
+  }
+
+  override def apply(x: Vector): Double = if (x.toArray.min < 0.0) Double.PositiveInfinity else 0.0
+}
+
+/**
+ * A function that projects onto a simple box defined by upper and lower limits on each vector
+ * element.
+ */
+class ProjBoxVector(l: Vector, u: Vector) extends ProxCapableFunction[Vector] {
+
+  val limits = l.toArray.zip(u.toArray)
+
+  override def apply(x: Vector, t: Double, mode: Mode): Value[Vector] = {
+
+    val g = if (mode.g) {
+      Some(new DenseVector(x.toArray.zip(limits).map(y =>
+        math.min(y._2._2, math.max(y._1, y._2._1)))))
+    } else {
+      None
+    }
+
+    Value(Some(0.0), g)
+  }
+
+  override def apply(x: Vector): Double = if (x.toArray.zip(limits).exists(y =>
+    y._1 > y._2._2 || y._1 < y._2._1)) { Double.PositiveInfinity } else { 0.0 }
 }

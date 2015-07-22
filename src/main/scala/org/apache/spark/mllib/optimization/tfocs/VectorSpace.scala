@@ -19,21 +19,24 @@ package org.apache.spark.mllib.optimization.tfocs
 
 import org.apache.spark.mllib.linalg.{ DenseVector, Vector }
 import org.apache.spark.mllib.linalg.BLAS
+import org.apache.spark.mllib.optimization.tfocs.VectorRDDFunctions._
 import org.apache.spark.rdd.RDD
 
 /**
  * Trait for a vector space.
+ *
+ * @tparam X Type representing a vector.
  */
-trait VectorSpace[V] {
+trait VectorSpace[X] {
 
   /** Linear combination of two vectors. */
-  def combine(alpha: Double, a: V, beta: Double, b: V): V
+  def combine(alpha: Double, a: X, beta: Double, b: X): X
 
   /** Inner product of two vectors. */
-  def dot(a: V, b: V): Double
+  def dot(a: X, b: X): Double
 
   /** Cache a vector. */
-  def cache(a: V): Unit = {}
+  def cache(a: X): Unit = {}
 }
 
 object VectorSpace {
@@ -67,12 +70,10 @@ object VectorSpace {
   implicit object RDDVectorVectorSpace extends VectorSpace[RDD[Vector]] {
 
     override def combine(alpha: Double, a: RDD[Vector], beta: Double, b: RDD[Vector]): RDD[Vector] =
-      a.zip(b).map(x =>
-        new DenseVector(x._1.toArray.zip(x._2.toArray).map(y =>
-          alpha * y._1 + beta * y._2)): Vector)
+      a.zipElements(b, (a_i, b_i) => alpha * a_i + beta * b_i)
 
     override def dot(a: RDD[Vector], b: RDD[Vector]): Double =
-      a.zip(b).map(x => BLAS.dot(x._1, x._2)).sum
+      a.zip(b).treeAggregate(0.0)((sum, x) => sum + BLAS.dot(x._1, x._2), _ + _)
 
     override def cache(a: RDD[Vector]): Unit = a.cache()
   }
