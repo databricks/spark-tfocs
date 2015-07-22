@@ -51,7 +51,7 @@ object TFOCS extends Logging {
    * @tparam C Type representing a column vector.
    *
    * @return A tuple containing two elements. The first element is a row vector containing the
-   *         minimizing 'x' values. The second element contains the objective function history.
+   *         optimized 'x' values. The second element contains the objective function history.
    */
   def optimize[R, C](
     f: SmoothFunction[C],
@@ -215,7 +215,7 @@ object TFOCS extends Logging {
       }
     }
 
-    logInfo("TFOCS.minimize finished. Last 10 losses %s".format(
+    logInfo("TFOCS.optimize finished. Last 10 losses %s".format(
       lossHistory.takeRight(10).mkString(", ")))
 
     (x, lossHistory.toArray)
