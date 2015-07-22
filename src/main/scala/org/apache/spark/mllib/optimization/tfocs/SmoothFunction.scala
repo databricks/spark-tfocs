@@ -86,8 +86,12 @@ class SmoothHuberRDDVector(x0: RDD[Vector], tau: Double)
     if (mode.f && mode.g) diff.cache()
 
     val f = if (mode.f) {
-      Some(diff.mapElements(y =>
-        if (math.abs(y) <= tau) 0.5 * y * y / tau else math.abs(y) - tau / 2.0).sum)
+      Some(diff.aggregateElements(0.0)(
+        seqOp = (sum, y) => {
+          val huberValue = if (math.abs(y) <= tau) 0.5 * y * y / tau else math.abs(y) - tau / 2.0
+          sum + huberValue
+        },
+        combOp = _ + _))
     } else {
       None
     }
@@ -116,10 +120,19 @@ class SmoothLogLLogisticRDDVector(y: RDD[Vector])
   override def apply(mu: RDD[Vector], mode: Mode): Value[RDD[Vector]] = {
 
     val f = if (mode.f) {
-      Some(y.zipElements(mu, (y_i, mu_i) => {
-        val yFactor = if (mu_i > 0.0) y_i - 1.0 else if (mu_i < 0.0) y_i else 0.0
-        yFactor * mu_i - math.log1p(math.exp(-math.abs(mu_i)))
-      }).sum)
+      Some(y.zip(mu).treeAggregate(0.0)(
+        seqOp = (sum, vectors) => {
+          if (vectors._1.size != vectors._2.size) {
+            throw new IllegalArgumentException("Can only zip Vectors with the same number of " +
+              "elements")
+          }
+          vectors._1.toArray.zip(vectors._2.toArray).map(elements => {
+            val (y_i, mu_i) = elements
+            val yFactor = if (mu_i > 0.0) y_i - 1.0 else if (mu_i < 0.0) y_i else 0.0
+            yFactor * mu_i - math.log1p(math.exp(-math.abs(mu_i)))
+          }).sum + sum
+        },
+        combOp = _ + _))
     } else {
       None
     }
