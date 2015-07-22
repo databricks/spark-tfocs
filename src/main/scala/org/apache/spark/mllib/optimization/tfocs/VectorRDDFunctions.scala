@@ -20,7 +20,8 @@ package org.apache.spark.mllib.optimization.tfocs
 import org.apache.spark.mllib.linalg.{ BLAS, DenseVector, Vector }
 import org.apache.spark.rdd.RDD
 
-class VectorRDDFunctions(self: RDD[Vector]) {
+/** Functional helpers for RDD[Vector] objects representing one dimensional vectors. */
+private[tfocs] class VectorRDDFunctions(self: RDD[Vector]) {
 
   def mapElements(f: Double => Double): RDD[Vector] =
     self.map(x => new DenseVector(x.toArray.map(f)))
@@ -34,6 +35,16 @@ class VectorRDDFunctions(self: RDD[Vector]) {
       new DenseVector(x._1.toArray.zip(x._2.toArray).map(y => f(y._1, y._2))): Vector
     })
 
+  def aggregateElements(zeroValue: Double)(
+    seqOp: (Double, Double) => Double,
+    combOp: (Double, Double) => Double): Double =
+    self.treeAggregate(zeroValue)(
+      seqOp = (aggregate, vector) => {
+        val intermediate = vector.toArray.aggregate(zeroValue)(seqop = seqOp, combop = combOp)
+        combOp(intermediate, aggregate)
+      },
+      combOp = combOp)
+
   def diff(other: RDD[Vector]): RDD[Vector] =
     self.zip(other).map({ x =>
       val ret = x._1.copy
@@ -41,10 +52,10 @@ class VectorRDDFunctions(self: RDD[Vector]) {
       ret
     })
 
-  def sum: Double = self.map(_.toArray.sum).sum
+  def sum: Double = self.treeAggregate(0.0)((sum, x) => sum + x.toArray.sum, _ + _)
 }
 
-object VectorRDDFunctions {
+private[tfocs] object VectorRDDFunctions {
 
   implicit def RDDToVectorRDDFunctions(rdd: RDD[Vector]): VectorRDDFunctions =
     new VectorRDDFunctions(rdd)

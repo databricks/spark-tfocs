@@ -19,6 +19,7 @@ package org.apache.spark.mllib.optimization.tfocs
 
 import org.apache.spark.mllib.linalg.{ DenseVector, Vector }
 import org.apache.spark.mllib.linalg.BLAS
+import org.apache.spark.mllib.optimization.tfocs.VectorRDDFunctions._
 import org.apache.spark.rdd.RDD
 
 /**
@@ -69,12 +70,10 @@ object VectorSpace {
   implicit object RDDVectorVectorSpace extends VectorSpace[RDD[Vector]] {
 
     override def combine(alpha: Double, a: RDD[Vector], beta: Double, b: RDD[Vector]): RDD[Vector] =
-      a.zip(b).map(x =>
-        new DenseVector(x._1.toArray.zip(x._2.toArray).map(y =>
-          alpha * y._1 + beta * y._2)): Vector)
+      a.zipElements(b, (a_i, b_i) => alpha * a_i + beta * b_i)
 
     override def dot(a: RDD[Vector], b: RDD[Vector]): Double =
-      a.zip(b).map(x => BLAS.dot(x._1, x._2)).sum
+      a.zip(b).treeAggregate(0.0)((sum, x) => sum + BLAS.dot(x._1, x._2), _ + _)
 
     override def cache(a: RDD[Vector]): Unit = a.cache()
   }

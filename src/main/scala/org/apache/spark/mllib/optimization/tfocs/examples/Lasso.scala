@@ -17,6 +17,15 @@
 
 package org.apache.spark.mllib.optimization.tfocs.examples
 
+import org.apache.spark.mllib.linalg.Vector
+import org.apache.spark.mllib.optimization.tfocs.{
+  ProductVectorRDDVector,
+  ProxL1Vector,
+  SmoothQuadRDDVector,
+  TFOCS
+}
+import org.apache.spark.rdd.RDD
+
 /** Helper to solve lasso regression problems using the tfocs implementation. */
 object SolverLasso {
 
