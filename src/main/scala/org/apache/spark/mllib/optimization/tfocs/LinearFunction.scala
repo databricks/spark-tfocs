@@ -20,6 +20,7 @@ package org.apache.spark.mllib.optimization.tfocs
 import org.apache.spark.mllib.linalg.BLAS
 import org.apache.spark.mllib.linalg.{ DenseVector, Vector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.CheckedIteratorFunctions._
+import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.rdd.RDD
 
 /**
@@ -40,8 +41,8 @@ trait LinearFunction[X, Y] {
   def t: LinearFunction[Y, X]
 }
 
-/** Compute the product of an RDD[Vector] matrix with a Vector to produce an RDD[Double] vector. */
-class ProductVectorRDDDouble(private val matrix: RDD[Vector])
+/** Compute the product of a DMatrix with a Vector to produce an RDD[Double] vector. */
+class ProductVectorRDDDouble(private val matrix: DMatrix)
     extends LinearFunction[Vector, RDD[Double]] {
 
   matrix.cache()
@@ -55,10 +56,9 @@ class ProductVectorRDDDouble(private val matrix: RDD[Vector])
 }
 
 /**
- * Compute the transpose product of an RDD[Vector] matrix with an RDD[Double] vector to produce a
- * Vector.
+ * Compute the transpose product of a DMatrix with an RDD[Double] vector to produce a Vector.
  */
-class TransposeProductVectorRDDDouble(private val matrix: RDD[Vector])
+class TransposeProductVectorRDDDouble(private val matrix: DMatrix)
     extends LinearFunction[RDD[Double], Vector] {
 
   matrix.cache()
@@ -81,33 +81,32 @@ class TransposeProductVectorRDDDouble(private val matrix: RDD[Vector])
   override def t: LinearFunction[Vector, RDD[Double]] = new ProductVectorRDDDouble(matrix)
 }
 
-/** Compute the product of an RDD[Vector] matrix with a Vector to produce an RDD[Vector] vector. */
-class ProductVectorRDDVector(private val matrix: RDD[Vector])
-    extends LinearFunction[Vector, RDD[Vector]] {
+/** Compute the product of a DMatrix with a Vector to produce a DVector. */
+class ProductVectorDVector(private val matrix: DMatrix)
+    extends LinearFunction[Vector, DVector] {
 
   matrix.cache()
 
-  override def apply(x: Vector): RDD[Vector] = {
+  override def apply(x: Vector): DVector = {
     val bcX = matrix.context.broadcast(x)
     matrix.mapPartitions(rows =>
       Iterator.single(new DenseVector(rows.map(row => BLAS.dot(row, bcX.value)).toArray)))
   }
 
-  override def t: LinearFunction[RDD[Vector], Vector] = new TransposeProductVectorRDDVector(matrix)
+  override def t: LinearFunction[DVector, Vector] = new TransposeProductVectorDVector(matrix)
 }
 
 /**
- * Compute the transpose product of an RDD[Vector] matrix with an RDD[Vector] vector to produce a
- * Vector.
+ * Compute the transpose product of a DMatrix with a DVector to produce a Vector.
  */
-class TransposeProductVectorRDDVector(@transient private val matrix: RDD[Vector])
-    extends LinearFunction[RDD[Vector], Vector] with java.io.Serializable {
+class TransposeProductVectorDVector(@transient private val matrix: DMatrix)
+    extends LinearFunction[DVector, Vector] with java.io.Serializable {
 
   matrix.cache()
 
   private lazy val n = matrix.first.size
 
-  override def apply(x: RDD[Vector]): Vector = {
+  override def apply(x: DVector): Vector = {
     matrix.zipPartitions(x)({ (matrixPartition, xPartition) =>
       Iterator.single(
         matrixPartition.checkedZip(xPartition.next.toArray.toIterator).aggregate(Vectors.zeros(n))(
@@ -132,5 +131,5 @@ class TransposeProductVectorRDDVector(@transient private val matrix: RDD[Vector]
     )
   }
 
-  override def t: LinearFunction[Vector, RDD[Vector]] = new ProductVectorRDDVector(matrix)
+  override def t: LinearFunction[Vector, DVector] = new ProductVectorDVector(matrix)
 }

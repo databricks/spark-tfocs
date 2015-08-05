@@ -18,19 +18,20 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 import org.apache.spark.mllib.linalg.{ BLAS, DenseVector, Vector }
+import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.rdd.RDD
 
-/** Functional helpers for RDD[Vector] objects representing one dimensional vectors. */
-private[tfocs] class VectorRDDFunctions(self: RDD[Vector]) {
+/** Functional helpers for DVector objects representing distributed one dimensional vectors. */
+private[tfocs] class DVectorFunctions(self: DVector) {
 
-  def mapElements(f: Double => Double): RDD[Vector] =
+  def mapElements(f: Double => Double): DVector =
     self.map(x => new DenseVector(x.toArray.map(f)))
 
-  def zipElements(other: RDD[Vector], f: (Double, Double) => Double): RDD[Vector] =
+  def zipElements(other: DVector, f: (Double, Double) => Double): DVector =
     self.zip(other).map({ x =>
       if (x._1.size != x._2.size) {
-        throw new IllegalArgumentException("Can only zipElements RDD[Vector]s with the same " +
-          "number of elements")
+        throw new IllegalArgumentException("Can only zipElements DVectors with the same number " +
+          "of elements")
       }
       new DenseVector(x._1.toArray.zip(x._2.toArray).map(y => f(y._1, y._2))): Vector
     })
@@ -45,7 +46,7 @@ private[tfocs] class VectorRDDFunctions(self: RDD[Vector]) {
       },
       combOp = combOp)
 
-  def diff(other: RDD[Vector]): RDD[Vector] =
+  def diff(other: DVector): DVector =
     self.zip(other).map({ x =>
       val ret = x._1.copy
       BLAS.axpy(-1.0, x._2, ret)
@@ -55,8 +56,8 @@ private[tfocs] class VectorRDDFunctions(self: RDD[Vector]) {
   def sum: Double = self.treeAggregate(0.0)((sum, x) => sum + x.toArray.sum, _ + _)
 }
 
-private[tfocs] object VectorRDDFunctions {
+private[tfocs] object DVectorFunctions {
 
-  implicit def RDDToVectorRDDFunctions(rdd: RDD[Vector]): VectorRDDFunctions =
-    new VectorRDDFunctions(rdd)
+  implicit def RDDToDVectorFunctions(dVector: DVector): DVectorFunctions =
+    new DVectorFunctions(dVector)
 }

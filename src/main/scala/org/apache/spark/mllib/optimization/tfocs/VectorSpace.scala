@@ -19,20 +19,19 @@ package org.apache.spark.mllib.optimization.tfocs
 
 import org.apache.spark.mllib.linalg.{ DenseVector, Vector }
 import org.apache.spark.mllib.linalg.BLAS
-import org.apache.spark.mllib.optimization.tfocs.VectorRDDFunctions._
 import org.apache.spark.rdd.RDD
 
 /**
- * Trait for a vector space.
+ * A trait for a vector space supporting a few basic linear algebra operations.
  *
- * @tparam X Type representing a vector.
+ * @tparam X A type representing a vector.
  */
 trait VectorSpace[X] {
 
-  /** Linear combination of two vectors. */
+  /** Compute a linear combination of two vectors. */
   def combine(alpha: Double, a: X, beta: Double, b: X): X
 
-  /** Inner product of two vectors. */
+  /** Compute the inner product of two vectors. */
   def dot(a: X, b: X): Double
 
   /** Cache a vector. */
@@ -40,6 +39,27 @@ trait VectorSpace[X] {
 }
 
 object VectorSpace {
+
+  /**
+   * A distributed one dimensional vector stored as an RDD of mllib.linalg Vectors, where each RDD
+   * partition contains a single Vector. This representation provides improved performance over
+   * RDD[Double], which requires that each element be unboxed during elementwise operations. By
+   * convention the Vectors are dense.
+   */
+  type DVector = RDD[Vector]
+
+  /**
+   * A distributed two dimensional matrix stored as an RDD of mllib.linalg Vectors, where each
+   * Vector represents a row of the matrix. The Vectors may be dense or sparse.
+   *
+   * NOTE In order to multiply the transpose of a DMatrix 'm' by a DVector 'v', m and v must be
+   * equivalently partitioned. Each partition of m must contain the same number of rows as there
+   * are vector elements in the corresponding partition of v. For example, if m contains two
+   * partitions and there are two row Vectors in the first partition and three row Vectors in the
+   * second partition, then v must have two partitions with a single Vector containing two elements
+   * in its first partition and a single Vector containing three elements in its second partition.
+   */
+  type DMatrix = RDD[Vector]
 
   /** A VectorSpace for Vectors in local memory. */
   implicit object SimpleVectorSpace extends VectorSpace[Vector] {
@@ -66,16 +86,18 @@ object VectorSpace {
     override def cache(a: RDD[Double]): Unit = a.cache()
   }
 
-  /** A VectorSpace for RDD[Vector] vectors. */
-  implicit object RDDVectorVectorSpace extends VectorSpace[RDD[Vector]] {
+  /** A VectorSpace for DVector vectors. */
+  implicit object DVectorVectorSpace extends VectorSpace[DVector] {
 
-    override def combine(alpha: Double, a: RDD[Vector], beta: Double, b: RDD[Vector]): RDD[Vector] =
+    import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
+
+    override def combine(alpha: Double, a: DVector, beta: Double, b: DVector): DVector =
       a.zipElements(b, (a_i, b_i) => alpha * a_i + beta * b_i)
 
-    override def dot(a: RDD[Vector], b: RDD[Vector]): Double =
+    override def dot(a: DVector, b: DVector): Double =
       a.zip(b).treeAggregate(0.0)((sum, x) => sum + BLAS.dot(x._1, x._2), _ + _)
 
-    override def cache(a: RDD[Vector]): Unit = a.cache()
+    override def cache(a: DVector): Unit = a.cache()
   }
 
 }
