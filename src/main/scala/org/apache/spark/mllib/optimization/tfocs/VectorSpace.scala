@@ -80,7 +80,10 @@ object VectorSpace {
     import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 
     override def combine(alpha: Double, a: DVector, beta: Double, b: DVector): DVector =
-      a.zipElements(b, (a_i, b_i) => alpha * a_i + beta * b_i)
+      a.zip(b).map(_ match {
+        case (aPart, bPart) =>
+          SimpleVectorSpace.combine(alpha, aPart, beta, bPart)
+      })
 
     override def dot(a: DVector, b: DVector): Double =
       a.zip(b).treeAggregate(0.0)((sum, x) => sum + BLAS.dot(x._1, x._2), _ + _)
