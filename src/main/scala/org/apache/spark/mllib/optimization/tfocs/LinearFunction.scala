@@ -21,7 +21,6 @@ import org.apache.spark.mllib.linalg.BLAS
 import org.apache.spark.mllib.linalg.{ DenseVector, Vector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.CheckedIteratorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
-import org.apache.spark.rdd.RDD
 
 /**
  * A trait for linear functions supporting application of a function and of its transpose.

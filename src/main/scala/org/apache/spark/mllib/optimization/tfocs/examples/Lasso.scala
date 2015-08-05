@@ -25,7 +25,6 @@ import org.apache.spark.mllib.optimization.tfocs.{
   TFOCS
 }
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
-import org.apache.spark.rdd.RDD
 
 /** Helper to solve lasso regression problems using the tfocs implementation. */
 object SolverLasso {

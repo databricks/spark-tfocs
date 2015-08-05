@@ -17,10 +17,9 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-import org.apache.spark.mllib.linalg.{ DenseVector, Vectors, Vector }
+import org.apache.spark.mllib.linalg.{ Vector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
-import org.apache.spark.rdd.RDD
 
 /**
  * A trait for smooth functions, with support for evaluating the function and computing its
