@@ -19,7 +19,9 @@ package org.apache.spark.mllib.optimization.tfocs
 
 /**
  * Evaluation result.
- * @param f optional function value
- * @param g optional gradient value
+ *
+ * @param f An optional function value.
+ * @param g An optional function gradient value.
+ * @tparam X Type representing a vector.
  */
-case class Value[X, Y](f: Option[X], g: Option[Y])
+case class Value[X](f: Option[Double], g: Option[X])

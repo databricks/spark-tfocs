@@ -35,31 +35,19 @@ class VectorSpaceSuite extends FunSuite with MLlibTestSparkContext with Matchers
       "SimpleVectorSpace.dot should return the correct result.")
   }
 
-  test("RDDDoubleVectorSpace is implemented properly") {
-    assert(Array(22.2, 27.3).deep ==
-      VectorSpace.RDDDoubleVectorSpace.combine(1.1, sc.parallelize(Array(2.0, 3.0)),
-        4.0, sc.parallelize(Array(5.0, 6.0))).collect().deep,
-      "RDDDoubleVectorSpace.combine should return the correct result.")
-
-    assert(28 ==
-      VectorSpace.RDDDoubleVectorSpace.dot(sc.parallelize(Array(2.0, 3.0)),
-        sc.parallelize(Array(5.0, 6.0))),
-      "RDDDoubleVectorSpace.dot should return the correct result.")
-  }
-
-  test("RDDVectorVectorSpace is implemented properly") {
+  test("DVectorVectorSpace is implemented properly") {
     assert(Array(22.2, 27.3, 32.4).deep ==
-      VectorSpace.RDDVectorVectorSpace.combine(1.1,
+      VectorSpace.DVectorVectorSpace.combine(1.1,
         sc.parallelize(Array(Vectors.dense(2.0, 3.0), Vectors.dense(4.0)), 2),
         4.0,
         sc.parallelize(Array(Vectors.dense(5.0, 6.0), Vectors.dense(7.0)), 2))
       .flatMap(_.toArray).collect().deep,
-      "RDDVectorVectorSpace.combine should return the correct result.")
+      "DVectorVectorSpace.combine should return the correct result.")
 
     assert(56 ==
-      VectorSpace.RDDVectorVectorSpace.dot(
+      VectorSpace.DVectorVectorSpace.dot(
         sc.parallelize(Array(Vectors.dense(2.0, 3.0), Vectors.dense(4.0)), 2),
         sc.parallelize(Array(Vectors.dense(5.0, 6.0), Vectors.dense(7.0)), 2)),
-      "RDDVectorVectorSpace.dot should return the correct result.")
+      "DVectorVectorSpace.dot should return the correct result.")
   }
 }

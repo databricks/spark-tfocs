@@ -19,10 +19,14 @@ package org.apache.spark.mllib.optimization.tfocs
 
 import org.apache.spark.mllib.linalg.BLAS
 import org.apache.spark.mllib.linalg.{ DenseVector, Vector, Vectors }
-import org.apache.spark.rdd.RDD
+import org.apache.spark.mllib.optimization.tfocs.CheckedIteratorFunctions._
+import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 
 /**
- * Trait for linear functions.
+ * A trait for linear functions supporting application of a function and of its transpose.
+ *
+ * @tparam X Type representing an input vector.
+ * @tparam Y Type representing an output vector.
  */
 trait LinearFunction[X, Y] {
   /**
@@ -36,97 +40,66 @@ trait LinearFunction[X, Y] {
   def t: LinearFunction[Y, X]
 }
 
-/** Compute the product of an RDD[Vector] matrix with a Vector to produce an RDD[Double] vector. */
-class ProductVectorRDDDouble(private val matrix: RDD[Vector])
-    extends LinearFunction[Vector, RDD[Double]] {
+/** Compute the product of a DMatrix with a Vector to produce a DVector. */
+class ProductVectorDVector(private val matrix: DMatrix)
+    extends LinearFunction[Vector, DVector] {
 
   matrix.cache()
 
-  override def apply(x: Vector): RDD[Double] = {
+  override def apply(x: Vector): DVector = {
     val bcX = matrix.context.broadcast(x)
-    matrix.map(row => BLAS.dot(row, bcX.value))
+    // Take the dot product of each matrix row with x.
+    matrix.mapPartitions(partitionRows =>
+      Iterator.single(new DenseVector(partitionRows.map(row => BLAS.dot(row, bcX.value)).toArray)))
   }
 
-  override def t: LinearFunction[RDD[Double], Vector] = new TransposeProductVectorRDDDouble(matrix)
+  override def t: LinearFunction[DVector, Vector] = new TransposeProductVectorDVector(matrix)
 }
 
 /**
- * Compute the transpose product of an RDD[Vector] matrix with an RDD[Double] vector to produce a
- * Vector.
+ * Compute the transpose product of a DMatrix with a DVector to produce a Vector.
+ *
+ * The implementation multiplies each row of 'matrix' by the corresponding value of the column
+ * vector 'x' and sums the scaled vectors thus obtained.
  */
-class TransposeProductVectorRDDDouble(private val matrix: RDD[Vector])
-    extends LinearFunction[RDD[Double], Vector] {
+class TransposeProductVectorDVector(@transient private val matrix: DMatrix)
+    extends LinearFunction[DVector, Vector] with java.io.Serializable {
 
   matrix.cache()
 
   private lazy val n = matrix.first.size
 
-  override def apply(x: RDD[Double]): Vector = {
-    matrix.zip(x).treeAggregate(Vectors.zeros(n))(
-      seqOp = (sum, row) => {
-        BLAS.axpy(row._2, row._1, sum)
-        sum
-      },
-      combOp = (s1, s2) => {
-        BLAS.axpy(1.0, s2, s1)
-        s1
-      }
-    )
-  }
-
-  override def t: LinearFunction[Vector, RDD[Double]] = new ProductVectorRDDDouble(matrix)
-}
-
-/** Compute the product of an RDD[Vector] matrix with a Vector to produce an RDD[Vector] vector. */
-class ProductVectorRDDVector(private val matrix: RDD[Vector])
-    extends LinearFunction[Vector, RDD[Vector]] {
-
-  matrix.cache()
-
-  override def apply(x: Vector): RDD[Vector] = {
-    val bcX = matrix.context.broadcast(x)
-    matrix.mapPartitions(rows =>
-      Iterator.single(new DenseVector(rows.map(row => BLAS.dot(row, bcX.value)).toArray)))
-  }
-
-  override def t: LinearFunction[RDD[Vector], Vector] = new TransposeProductVectorRDDVector(matrix)
-}
-
-/**
- * Compute the transpose product of an RDD[Vector] matrix with an RDD[Vector] vector to produce a
- * Vector.
- */
-class TransposeProductVectorRDDVector(@transient private val matrix: RDD[Vector])
-    extends LinearFunction[RDD[Vector], Vector] with java.io.Serializable {
-
-  matrix.cache()
-
-  private lazy val n = matrix.first.size
-
-  override def apply(x: RDD[Vector]): Vector = {
+  override def apply(x: DVector): Vector = {
     matrix.zipPartitions(x)({ (matrixPartition, xPartition) =>
-      Iterator.single(matrixPartition.zip(xPartition.next.toArray.toIterator)
-        .aggregate(Vectors.zeros(n))(
-          seqop = (sum, row) => {
-            BLAS.axpy(row._2, row._1, sum)
-            sum
+      Iterator.single(
+        matrixPartition.checkedZip(xPartition.next.toArray.toIterator).aggregate(Vectors.zeros(n))(
+          seqop = (_, _) match {
+            case (sum, (matrix_i, x_i)) => {
+              // Multiply an element of x by its corresponding matrix row, and add to the running
+              // sum vector.
+              BLAS.axpy(x_i, matrix_i, sum)
+              sum
+            }
           },
-          combop = (s1, s2) => {
-            BLAS.axpy(1.0, s2, s1)
-            s1
+          combop = (sum1, sum2) => {
+            // Add the intermediate sum vectors.
+            BLAS.axpy(1.0, sum2, sum1)
+            sum1
           }
         ))
     }).treeAggregate(Vectors.zeros(n))(
-      seqOp = (s1, s2) => {
-        BLAS.axpy(1.0, s2, s1)
-        s1
+      seqOp = (sum1, sum2) => {
+        // Add the intermediate sum vectors.
+        BLAS.axpy(1.0, sum2, sum1)
+        sum1
       },
-      combOp = (s1, s2) => {
-        BLAS.axpy(1.0, s2, s1)
-        s1
+      combOp = (sum1, sum2) => {
+        // Add the intermediate sum vectors.
+        BLAS.axpy(1.0, sum2, sum1)
+        sum1
       }
     )
   }
 
-  override def t: LinearFunction[Vector, RDD[Vector]] = new ProductVectorRDDVector(matrix)
+  override def t: LinearFunction[Vector, DVector] = new ProductVectorDVector(matrix)
 }

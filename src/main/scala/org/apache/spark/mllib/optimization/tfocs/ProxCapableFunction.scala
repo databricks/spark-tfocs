@@ -20,29 +20,43 @@ package org.apache.spark.mllib.optimization.tfocs
 import org.apache.spark.mllib.linalg.{ DenseVector, Vector, Vectors }
 
 /**
- * Trait for prox-capable functions.
+ * A trait for prox capable functions, which support computation of the proximity operator:
+ *   prox_h(x, t) = argmin_z(h(z) + 0.5 * ||z - x||_2^2 / t)
+ *
+ * Both the minimizing z value and the function value h(z) may be computed, depending on the
+ * mode specified.
+ *
+ * @tparam X A type representing a vector on which to evaluate the function.
  */
 trait ProxCapableFunction[X] {
   /**
-   * Evaluates this function at x with smoothing parameter t.
+   * Evaluates prox_h at x with smoothing parameter t, returning both z and h(z) depending on the
+   * mode specified.
+   *
+   * @param x The vector on which to evaluate the function.
+   * @param t The smoothing parameter.
+   * @param mode The computation mode. If mode.f is true, h(z) is returned. If mode.g is true, z
+   *        is returned.
+   * @return A Value containing h(z) and/or z, depending on the 'mode' parameter. The h(z) value
+   *         is contained in value.f, while z is contained in value.g.
    */
-  def apply(x: X, t: Double, mode: Mode): Value[Double, X]
+  def apply(x: X, t: Double, mode: Mode): Value[X]
 
   /**
-   * Evaluates this function at x.
+   * Evaluates prox_h at x with smoothing parameter t == 0.0, returning z.
    */
   def apply(x: X): Double = apply(x, 0.0, Mode(f = true, g = false)).f.get
 }
 
-/** A function that always returns zero. */
-class ZeroProxVector extends ProxCapableFunction[Vector] {
-  override def apply(x: Vector, t: Double, mode: Mode): Value[Double, Vector] =
+/** A function that returns constant zero. */
+class ProxZeroVector extends ProxCapableFunction[Vector] {
+  override def apply(x: Vector, t: Double, mode: Mode): Value[Vector] =
     Value(Some(0.0), Some(x))
 }
 
-/** A function that returns the L1 norm. */
-class L1ProxVector(scale: Double) extends ProxCapableFunction[Vector] {
-  override def apply(x: Vector, t: Double, mode: Mode): Value[Double, Vector] = {
+/** The proximity operator for the L1 norm. */
+class ProxL1Vector(scale: Double) extends ProxCapableFunction[Vector] {
+  override def apply(x: Vector, t: Double, mode: Mode): Value[Vector] = {
     val shrinkage = scale * t
     val g = shrinkage match {
       case 0.0 => x
@@ -52,4 +66,51 @@ class L1ProxVector(scale: Double) extends ProxCapableFunction[Vector] {
     val f = if (mode.f) Some(scale * Vectors.norm(g, 1)) else None
     Value(f, Some(g))
   }
+}
+
+/**
+ * A projection onto the nonnegative orthant, implemented using an indicator function. The indicator
+ * function returns 0 for values within the nonnegative orthant and Double.PositiveInfinity
+ * otherwise.
+ */
+class ProjRPlusVector extends ProxCapableFunction[Vector] {
+  override def apply(x: Vector, t: Double, mode: Mode): Value[Vector] = {
+
+    val g = if (mode.g) {
+      Some(new DenseVector(x.toArray.map(math.max(_, 0.0))))
+    } else {
+      None
+    }
+
+    Value(Some(0.0), g)
+  }
+
+  override def apply(x: Vector): Double = if (x.toArray.min < 0.0) Double.PositiveInfinity else 0.0
+}
+
+/**
+ * A projection onto a simple box defined by upper and lower limits on each vector element,
+ * implemented using an indicator function. The indicator function returns 0 for values within the
+ * box and Double.PositiveInfinity otherwise.
+ */
+class ProjBoxVector(l: Vector, u: Vector) extends ProxCapableFunction[Vector] {
+
+  val limits = l.toArray.zip(u.toArray)
+
+  override def apply(x: Vector, t: Double, mode: Mode): Value[Vector] = {
+
+    val g = if (mode.g) {
+      Some(new DenseVector(x.toArray.zip(limits).map(y =>
+        // Bound each element using the lower and upper limit for that element.
+        math.min(y._2._2, math.max(y._2._1, y._1)))))
+    } else {
+      None
+    }
+
+    Value(Some(0.0), g)
+  }
+
+  override def apply(x: Vector): Double = if (x.toArray.zip(limits).exists(y =>
+    // If any element is outside of the element's bounds, return infinity.
+    y._1 > y._2._2 || y._1 < y._2._1)) { Double.PositiveInfinity } else { 0.0 }
 }
