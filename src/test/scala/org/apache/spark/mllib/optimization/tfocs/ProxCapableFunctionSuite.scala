@@ -19,12 +19,14 @@ package org.apache.spark.mllib.optimization.tfocs
 
 import org.scalatest.FunSuite
 
-import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.linalg.{ BLAS, Vectors }
+import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.fs.vector.double._
+import org.apache.spark.mllib.optimization.tfocs.fs.dvector.double._
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 import org.apache.spark.mllib.util.TestingUtils._
 
-class ProxCapableFunctionSuite extends FunSuite {
+class ProxCapableFunctionSuite extends FunSuite with MLlibTestSparkContext {
 
   test("The ProxZero implementation should return the expected value and vector") {
     val fun = new ProxZero()
@@ -89,5 +91,31 @@ class ProxCapableFunctionSuite extends FunSuite {
     val fun4 = new ProjBox(Vectors.dense(10, 19, 29).toDense, Vectors.dense(11, 21, 29.5).toDense)
     assert(fun4(x2) == Double.PositiveInfinity,
       "value outisde the box should be correct for function short form")
+  }
+
+  test("The ProxShiftPlus implementation should return the expected value and vector") {
+
+    // Already nonnegative.
+    val c1 = sc.parallelize(Array(Vectors.dense(9.0, 19.0).toDense, Vectors.dense(29.0).toDense))
+    val fun1 = new ProxShiftRPlus(c1)
+    val x1 = sc.parallelize(Array(Vectors.dense(10.0, 20.0).toDense, Vectors.dense(30.0).toDense))
+    val expectedEvalF1 = 10 * 9 + 19 * 20 + 29 * 30
+    assert(fun1(x1) == expectedEvalF1, "eval value should be correct")
+    val ProxValue(Some(f1), Some(g1)) = fun1(x1, 0.8, ProxMode(true, true))
+    val expectedG1 = Vectors.dense(10 - .8 * 9, 20 - .8 * 19, 30 - .8 * 29)
+    val expectedF1 = BLAS.dot(Vectors.dense(c1.flatMap(_.toArray).collect), expectedG1)
+    assert(f1 == expectedF1, "value should be correct")
+    assert(Vectors.dense(g1.collectElements) == expectedG1, "vector should be correct")
+
+    // Some negative elements.
+    val c2 = sc.parallelize(Array(Vectors.dense(9.0, -19.0).toDense, Vectors.dense(-29.0).toDense))
+    val fun2 = new ProxShiftRPlus(c2)
+    val x2 = sc.parallelize(Array(Vectors.dense(-10.0, 20.0).toDense, Vectors.dense(-30.0).toDense))
+    assert(fun2(x2) == Double.PositiveInfinity, "eval value should be correct")
+    val ProxValue(Some(f2), Some(g2)) = fun2(x2, 0.8, ProxMode(true, true))
+    val expectedG2 = Vectors.dense(0.0, 20 - .8 * -19, 0.0)
+    val expectedF2 = BLAS.dot(Vectors.dense(c2.flatMap(_.toArray).collect), expectedG2)
+    assert(f2 == expectedF2, "value should be correct")
+    assert(Vectors.dense(g2.collectElements) == expectedG2, "vector should be correct")
   }
 }

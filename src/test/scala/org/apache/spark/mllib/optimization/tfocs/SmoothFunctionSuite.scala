@@ -23,6 +23,7 @@ import org.apache.spark.SparkException
 import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.fs.dvector.double._
+import org.apache.spark.mllib.optimization.tfocs.fs.dvectordouble.double._
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 import org.apache.spark.mllib.util.TestingUtils._
 
@@ -108,5 +109,59 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
       1.0 - math.exp(-0.4) / (1.0 + math.exp(-0.4)),
       1.0 - math.exp(0.0) / (1.0 + math.exp(0.0)))
     assert(Vectors.dense(g.collectElements) == expectedG, "function gradient should be correct")
+  }
+
+  test("The SmoothDual implementation should return the expected value and gradient") {
+
+    val c = sc.parallelize(Array(Vectors.dense(1.0, -2.2).toDense,
+      Vectors.dense(3.4, -4.6, 5.8).toDense), 2)
+    val objectiveF = new ProxShiftRPlus(c)
+    val mu = 0.2
+    val x0 = sc.parallelize(Array(Vectors.dense(2.0, -1.2).toDense,
+      Vectors.dense(0.4, -1.6, 2.8).toDense), 2)
+    val ATz = sc.parallelize(Array(Vectors.dense(12.0, -11.2).toDense,
+      Vectors.dense(10.4, -11.6, 12.8).toDense), 2)
+    val fun = new SmoothDual(objectiveF, mu, x0)
+
+    val Value(Some(f), Some(g)) = fun(ATz, Mode(true, true))
+
+    val expectedOffsetCenter = sc.parallelize(Array(Vectors.dense(mu * 12.0 + 2.0,
+      mu * -11.2 + -1.2).toDense,
+      Vectors.dense(mu * 10.4 + 0.4,
+        mu * -11.6 + -1.6,
+        mu * 12.8 + 2.8).toDense), 2)
+    val ProxValue(Some(expectedProxF), Some(expectedProxMinimizer)) =
+      objectiveF(expectedOffsetCenter, mu, ProxMode(true, true))
+
+    val expectedF = ATz.dot(expectedProxMinimizer) - expectedProxF -
+      (0.5 / mu) * x0.sqdist(expectedProxMinimizer)
+    assert(f == expectedF, "function value should be correct")
+
+    val expectedG = expectedProxMinimizer.mapElements(g_i => -g_i)
+    assert(Vectors.dense(g.collectElements) == Vectors.dense(expectedG.collectElements),
+      "function gradient should be correct")
+  }
+
+  test("The SmoothCombine implementation should return the expected value and gradient") {
+
+    val x0 = sc.parallelize(Array(Vectors.dense(2.0, -1.2).toDense,
+      Vectors.dense(0.4, -1.6, 2.8).toDense), 2)
+    val objectiveF = new SmoothQuad(x0)
+    val x = (sc.parallelize(Array(Vectors.dense(9.0, 10.1).toDense,
+      Vectors.dense(11.2, 12.3, 13.4).toDense), 2),
+      88.1)
+    val fun = new SmoothCombine(objectiveF)
+
+    val Value(Some(f), Some(g)) = fun(x, Mode(true, true))
+
+    val expectedF = (math.pow(9 - 2, 2) + math.pow(10.1 - -1.2, 2) + math.pow(11.2 - 0.4, 2) +
+      math.pow(12.3 - -1.6, 2) + math.pow(13.4 - 2.8, 2)) / 2 + 88.1
+    assert(f == expectedF, "function value should be correct")
+
+    val expectedG1 = Vectors.dense(9 - 2, 10.1 - -1.2, 11.2 - 0.4, 12.3 - -1.6, 13.4 - 2.8)
+    assert(Vectors.dense(g._1.collectElements) == expectedG1, "function gradient should be correct")
+
+    val expectedG2 = 1.0
+    assert(g._2 == expectedG2, "function gradient should be correct")
   }
 }

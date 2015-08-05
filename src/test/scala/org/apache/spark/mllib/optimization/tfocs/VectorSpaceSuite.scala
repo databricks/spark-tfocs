@@ -24,6 +24,7 @@ import org.apache.spark.mllib.util.MLlibTestSparkContext
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.mllib.optimization.tfocs.vs.dvector.DVectorSpace
+import org.apache.spark.mllib.optimization.tfocs.vs.dvectordouble.DVectorDoubleSpace
 import org.apache.spark.mllib.optimization.tfocs.vs.vector.DenseVectorSpace
 
 class VectorSpaceSuite extends FunSuite with MLlibTestSparkContext {
@@ -64,5 +65,32 @@ class VectorSpaceSuite extends FunSuite with MLlibTestSparkContext {
     val expectedDot = 2.0 * 5.0 + 3.0 * 6.0 + 4.0 * 7.0
     assert(DVectorSpace.dot(a, b) == expectedDot,
       "DVectorSpace.dot should return the correct result.")
+  }
+
+  test("DVectorDoubleSpace.combine is implemented properly") {
+    val alpha = 1.1
+    val a = (sc.parallelize(Array(Vectors.dense(2.0, 3.0).toDense, Vectors.dense(4.0).toDense), 2),
+      9.9)
+    val beta = 4.0
+    val b = (sc.parallelize(Array(Vectors.dense(5.0, 6.0).toDense, Vectors.dense(7.0).toDense), 2),
+      11.11)
+    val combination = DVectorDoubleSpace.combine(alpha, a, beta, b)
+    val expectedCombination =
+      (Vectors.dense(1.1 * 2.0 + 4.0 * 5.0, 1.1 * 3.0 + 4.0 * 6.0, 1.1 * 4.0 + 4.0 * 7.0),
+        1.1 * 9.9 + 4.0 * 11.11)
+    assert(Vectors.dense(combination._1.collectElements) == expectedCombination._1,
+      "DVectorVectorSpace.combine should return the correct result.")
+    assert(combination._2 == expectedCombination._2,
+      "DVectorVectorSpace.combine should return the correct result.")
+  }
+
+  test("DVectorDoubleSpace.dot is implemented properly") {
+    val a = (sc.parallelize(Array(Vectors.dense(2.0, 3.0).toDense, Vectors.dense(4.0).toDense), 2),
+      9.9)
+    val b = (sc.parallelize(Array(Vectors.dense(5.0, 6.0).toDense, Vectors.dense(7.0).toDense), 2),
+      11.11)
+    val expectedDot = 2.0 * 5.0 + 3.0 * 6.0 + 4.0 * 7.0 + 9.9 * 11.11
+    assert(DVectorDoubleSpace.dot(a, b) == expectedDot,
+      "DVectorVectorSpace.dot should return the correct result.")
   }
 }

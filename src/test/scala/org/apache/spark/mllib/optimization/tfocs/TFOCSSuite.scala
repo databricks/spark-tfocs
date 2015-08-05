@@ -31,7 +31,7 @@ import org.apache.spark.mllib.util.TestingUtils._
 class TFOCSSuite extends FunSuite with MLlibTestSparkContext {
 
   test("The weights and losses returned by Spark TFOCS should match those returned by Matlab " +
-    "TFOCS") {
+    "tfocs") {
 
     // The test below checks that the results match those of the following TFOCS matlab program
     // (using TFOCS version 1945a771f315acd4cc6eba638b5c01fb52ee7aaa):
@@ -65,7 +65,7 @@ class TFOCSSuite extends FunSuite with MLlibTestSparkContext {
     val lambda = 0.0298
     val x0 = Vectors.zeros(10).toDense
 
-    val (x, lossHistory) = TFOCS.optimize(new SmoothQuad(b),
+    val (x, TFOCS.OptimizationData(lossHistory, _, _)) = TFOCS.optimize(new SmoothQuad(b),
       new LinopMatrix(A),
       new ProxL1(lambda),
       x0)
