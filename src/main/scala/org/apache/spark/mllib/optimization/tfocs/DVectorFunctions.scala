@@ -19,7 +19,6 @@ package org.apache.spark.mllib.optimization.tfocs
 
 import org.apache.spark.mllib.linalg.{ BLAS, DenseVector, Vector }
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
-import org.apache.spark.rdd.RDD
 
 /** Functional helpers for DVector objects representing distributed one dimensional vectors. */
 private[tfocs] class DVectorFunctions(self: DVector) {
@@ -58,6 +57,6 @@ private[tfocs] class DVectorFunctions(self: DVector) {
 
 private[tfocs] object DVectorFunctions {
 
-  implicit def RDDToDVectorFunctions(dVector: DVector): DVectorFunctions =
+  implicit def DVectorToDVectorFunctions(dVector: DVector): DVectorFunctions =
     new DVectorFunctions(dVector)
 }
