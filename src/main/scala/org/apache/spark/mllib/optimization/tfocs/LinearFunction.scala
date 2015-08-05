@@ -24,10 +24,10 @@ import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.rdd.RDD
 
 /**
- * Trait for linear functions.
+ * A trait for linear functions supporting application of a function and of its transpose.
  *
- * @tparam X Type representing a linear function input vector.
- * @tparam Y Type representing a linear function output vector.
+ * @tparam X Type representing an input vector.
+ * @tparam Y Type representing an output vector.
  */
 trait LinearFunction[X, Y] {
   /**
@@ -49,8 +49,9 @@ class ProductVectorDVector(private val matrix: DMatrix)
 
   override def apply(x: Vector): DVector = {
     val bcX = matrix.context.broadcast(x)
-    matrix.mapPartitions(rows =>
-      Iterator.single(new DenseVector(rows.map(row => BLAS.dot(row, bcX.value)).toArray)))
+    // Take the dot product of each matrix row with x.
+    matrix.mapPartitions(partitionRows =>
+      Iterator.single(new DenseVector(partitionRows.map(row => BLAS.dot(row, bcX.value)).toArray)))
   }
 
   override def t: LinearFunction[DVector, Vector] = new TransposeProductVectorDVector(matrix)
@@ -58,6 +59,9 @@ class ProductVectorDVector(private val matrix: DMatrix)
 
 /**
  * Compute the transpose product of a DMatrix with a DVector to produce a Vector.
+ *
+ * The implementation multiplies each row of 'matrix' by the corresponding value of the column
+ * vector 'x' and sums the scaled vectors thus obtained.
  */
 class TransposeProductVectorDVector(@transient private val matrix: DMatrix)
     extends LinearFunction[DVector, Vector] with java.io.Serializable {
@@ -70,23 +74,30 @@ class TransposeProductVectorDVector(@transient private val matrix: DMatrix)
     matrix.zipPartitions(x)({ (matrixPartition, xPartition) =>
       Iterator.single(
         matrixPartition.checkedZip(xPartition.next.toArray.toIterator).aggregate(Vectors.zeros(n))(
-          seqop = (sum, row) => {
-            BLAS.axpy(row._2, row._1, sum)
-            sum
+          seqop = (_, _) match {
+            case (sum, (matrix_i, x_i)) => {
+              // Multiply an element of x by its corresponding matrix row, and add to the running
+              // sum vector.
+              BLAS.axpy(x_i, matrix_i, sum)
+              sum
+            }
           },
-          combop = (s1, s2) => {
-            BLAS.axpy(1.0, s2, s1)
-            s1
+          combop = (sum1, sum2) => {
+            // Add the intermediate sum vectors.
+            BLAS.axpy(1.0, sum2, sum1)
+            sum1
           }
         ))
     }).treeAggregate(Vectors.zeros(n))(
-      seqOp = (s1, s2) => {
-        BLAS.axpy(1.0, s2, s1)
-        s1
+      seqOp = (sum1, sum2) => {
+        // Add the intermediate sum vectors.
+        BLAS.axpy(1.0, sum2, sum1)
+        sum1
       },
-      combOp = (s1, s2) => {
-        BLAS.axpy(1.0, s2, s1)
-        s1
+      combOp = (sum1, sum2) => {
+        // Add the intermediate sum vectors.
+        BLAS.axpy(1.0, sum2, sum1)
+        sum1
       }
     )
   }
