@@ -28,20 +28,6 @@ class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext {
   lazy val matrix = sc.parallelize(Array(Vectors.dense(1.0, 2.0, 3.0),
     Vectors.dense(4.0, 5.0, 6.0)))
 
-  test("ProductVectorRDDDouble multiplies properly") {
-
-    assert(Array(50.0, 122.0).deep ==
-      new ProductVectorRDDDouble(matrix)(Vectors.dense(7.0, 8.0, 9.0)).collect().deep,
-      "should return the correct product")
-  }
-
-  test("TransposeProductVectorRDDDouble multiplies properly") {
-
-    assert(Vectors.dense(29.0, 40.0, 51.0) ==
-      new TransposeProductVectorRDDDouble(matrix)(sc.parallelize(Array(5.0, 6.0))),
-      "should return the correct product")
-  }
-
   test("ProductVectorDVector multiplies properly") {
 
     assert(Array(50.0, 122.0).deep ==
