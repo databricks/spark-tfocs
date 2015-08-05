@@ -26,20 +26,6 @@ import org.apache.spark.mllib.util.TestingUtils._
 
 class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext with Matchers {
 
-  test("The SmoothQuadRDDDouble implementation should return the expected value and gradient") {
-
-    val x0 = sc.parallelize(Array(1.0, 2.0, 3.0))
-    val x = sc.parallelize(Array(10.0, 20.0, 30.0))
-
-    val Value(Some(f), Some(g)) = new SmoothQuadRDDDouble(x0)(x, Mode(true, true))
-
-    assert(f == (math.pow(10 - 1, 2) + math.pow(20 - 2, 2) + math.pow(30 - 3, 2)) / 2,
-      "function value should be correct")
-
-    assert(g.collect().deep == Array(10.0 - 1.0, 20.0 - 2.0, 30.0 - 3.0).deep,
-      "function gradient should be correct")
-  }
-
   test("The SmoothQuadDVector implementation should return the expected value and gradient") {
 
     val x0 = sc.parallelize(Array(Vectors.dense(1.0, 2.0), Vectors.dense(3.0)), 2)

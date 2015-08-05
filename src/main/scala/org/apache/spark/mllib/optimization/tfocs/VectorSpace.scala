@@ -74,18 +74,6 @@ object VectorSpace {
     override def dot(a: Vector, b: Vector): Double = BLAS.dot(a, b)
   }
 
-  /** A VectorSpace for RDD[Double] vectors. */
-  implicit object RDDDoubleVectorSpace extends VectorSpace[RDD[Double]] {
-
-    override def combine(alpha: Double, a: RDD[Double], beta: Double, b: RDD[Double]): RDD[Double] =
-      a.zip(b).map(x => alpha * x._1 + beta * x._2)
-
-    override def dot(a: RDD[Double], b: RDD[Double]): Double =
-      a.zip(b).treeAggregate(0.0)((sum, x) => sum + x._1 * x._2, _ + _)
-
-    override def cache(a: RDD[Double]): Unit = a.cache()
-  }
-
   /** A VectorSpace for DVector vectors. */
   implicit object DVectorVectorSpace extends VectorSpace[DVector] {
 

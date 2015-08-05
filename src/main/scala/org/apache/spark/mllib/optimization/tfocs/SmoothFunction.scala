@@ -40,19 +40,6 @@ trait SmoothFunction[X] {
   def apply(x: X): Double = apply(x, Mode(f = true, g = false)).f.get
 }
 
-/** The squared error function applied to RDD[Double] vectors, with a constant factor of 0.5. */
-class SmoothQuadRDDDouble(x0: RDD[Double]) extends SmoothFunction[RDD[Double]] {
-
-  x0.cache()
-
-  override def apply(x: RDD[Double], mode: Mode): Value[RDD[Double]] = {
-    val g = x.zip(x0).map(y => y._1 - y._2)
-    if (mode.f && mode.g) g.cache()
-    val f = if (mode.f) Some(g.treeAggregate(0.0)((sum, y) => sum + y * y, _ + _) / 2.0) else None
-    Value(f, Some(g))
-  }
-}
-
 /** The squared error function applied to DVectors, with a constant factor of 0.5. */
 class SmoothQuadDVector(x0: DVector) extends SmoothFunction[DVector] {
 

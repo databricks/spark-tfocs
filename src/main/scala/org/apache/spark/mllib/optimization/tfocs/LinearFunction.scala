@@ -41,46 +41,6 @@ trait LinearFunction[X, Y] {
   def t: LinearFunction[Y, X]
 }
 
-/** Compute the product of a DMatrix with a Vector to produce an RDD[Double] vector. */
-class ProductVectorRDDDouble(private val matrix: DMatrix)
-    extends LinearFunction[Vector, RDD[Double]] {
-
-  matrix.cache()
-
-  override def apply(x: Vector): RDD[Double] = {
-    val bcX = matrix.context.broadcast(x)
-    matrix.map(row => BLAS.dot(row, bcX.value))
-  }
-
-  override def t: LinearFunction[RDD[Double], Vector] = new TransposeProductVectorRDDDouble(matrix)
-}
-
-/**
- * Compute the transpose product of a DMatrix with an RDD[Double] vector to produce a Vector.
- */
-class TransposeProductVectorRDDDouble(private val matrix: DMatrix)
-    extends LinearFunction[RDD[Double], Vector] {
-
-  matrix.cache()
-
-  private lazy val n = matrix.first.size
-
-  override def apply(x: RDD[Double]): Vector = {
-    matrix.zip(x).treeAggregate(Vectors.zeros(n))(
-      seqOp = (sum, row) => {
-        BLAS.axpy(row._2, row._1, sum)
-        sum
-      },
-      combOp = (s1, s2) => {
-        BLAS.axpy(1.0, s2, s1)
-        s1
-      }
-    )
-  }
-
-  override def t: LinearFunction[Vector, RDD[Double]] = new ProductVectorRDDDouble(matrix)
-}
-
 /** Compute the product of a DMatrix with a Vector to produce a DVector. */
 class ProductVectorDVector(private val matrix: DMatrix)
     extends LinearFunction[Vector, DVector] {
