@@ -42,26 +42,26 @@ class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext with Match
       "should return the correct product")
   }
 
-  test("ProductVectorRDDVector multiplies properly") {
+  test("ProductVectorDVector multiplies properly") {
 
     assert(Array(50.0, 122.0).deep ==
-      new ProductVectorRDDVector(matrix)(
+      new ProductVectorDVector(matrix)(
         Vectors.dense(7.0, 8.0, 9.0)).flatMap(_.toArray).collect().deep,
       "should return the correct product")
   }
 
-  test("TransposeProductVectorRDDVector multiplies properly") {
+  test("TransposeProductVectorDVector multiplies properly") {
 
     assert(Vectors.dense(29.0, 40.0, 51.0) ==
-      new TransposeProductVectorRDDVector(matrix)(sc.parallelize(Array(Vectors.dense(5.0),
+      new TransposeProductVectorDVector(matrix)(sc.parallelize(Array(Vectors.dense(5.0),
         Vectors.dense(6.0)), 2)),
       "should return the correct product")
   }
 
-  test("TransposeProductVectorRDDVector checks for mismatched partition vectors") {
+  test("TransposeProductVectorDVector checks for mismatched partition vectors") {
 
     a[SparkException] should be thrownBy {
-      new TransposeProductVectorRDDVector(matrix)(sc.parallelize(Array(Vectors.dense(5.0, 6.0),
+      new TransposeProductVectorDVector(matrix)(sc.parallelize(Array(Vectors.dense(5.0, 6.0),
         Vectors.zeros(0)), 2))
     }
   }

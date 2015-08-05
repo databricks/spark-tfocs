@@ -18,7 +18,8 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 import org.apache.spark.mllib.linalg.{ DenseVector, Vectors, Vector }
-import org.apache.spark.mllib.optimization.tfocs.VectorRDDFunctions._
+import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
+import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.rdd.RDD
 
 /**
@@ -52,12 +53,12 @@ class SmoothQuadRDDDouble(x0: RDD[Double]) extends SmoothFunction[RDD[Double]] {
   }
 }
 
-/** The squared error function applied to RDD[Vector] vectors, with a constant factor of 0.5. */
-class SmoothQuadRDDVector(x0: RDD[Vector]) extends SmoothFunction[RDD[Vector]] {
+/** The squared error function applied to DVectors, with a constant factor of 0.5. */
+class SmoothQuadDVector(x0: DVector) extends SmoothFunction[DVector] {
 
   x0.cache()
 
-  override def apply(x: RDD[Vector], mode: Mode): Value[RDD[Vector]] = {
+  override def apply(x: DVector, mode: Mode): Value[DVector] = {
     val g = x.diff(x0)
     if (mode.f && mode.g) g.cache()
     val f = if (mode.f) {
@@ -70,17 +71,17 @@ class SmoothQuadRDDVector(x0: RDD[Vector]) extends SmoothFunction[RDD[Vector]] {
 }
 
 /**
- * The huber loss function applied to RDD[Vector] vectors.
+ * The huber loss function applied to DVectors.
  *
  * @param x0 The vector against which loss should be computed.
  * @param tau The huber loss parameter.
  */
-class SmoothHuberRDDVector(x0: RDD[Vector], tau: Double)
-    extends SmoothFunction[RDD[Vector]] with Serializable {
+class SmoothHuberDVector(x0: DVector, tau: Double)
+    extends SmoothFunction[DVector] with Serializable {
 
   x0.cache()
 
-  override def apply(x: RDD[Vector], mode: Mode): Value[RDD[Vector]] = {
+  override def apply(x: DVector, mode: Mode): Value[DVector] = {
 
     val diff = x.diff(x0)
     if (mode.f && mode.g) diff.cache()
@@ -107,17 +108,17 @@ class SmoothHuberRDDVector(x0: RDD[Vector], tau: Double)
 }
 
 /**
- * The log likelihood logistic loss function applied to RDD[Vector] vectors.
+ * The log likelihood logistic loss function applied to DVectors.
  *
  * @param y The observed values.
  * @param mu The variable values.
  */
-class SmoothLogLLogisticRDDVector(y: RDD[Vector])
-    extends SmoothFunction[RDD[Vector]] with Serializable {
+class SmoothLogLLogisticDVector(y: DVector)
+    extends SmoothFunction[DVector] with Serializable {
 
   y.cache()
 
-  override def apply(mu: RDD[Vector], mode: Mode): Value[RDD[Vector]] = {
+  override def apply(mu: DVector, mode: Mode): Value[DVector] = {
 
     val f = if (mode.f) {
       Some(y.zip(mu).treeAggregate(0.0)(

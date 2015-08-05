@@ -59,8 +59,8 @@ class TFOCSSuite extends FunSuite with MLlibTestSparkContext with Matchers {
     val lambda = 0.0298
     val x0 = Vectors.zeros(10)
 
-    val (x, lossHistory) = TFOCS.optimize(new SmoothQuadRDDVector(b),
-      new ProductVectorRDDVector(A),
+    val (x, lossHistory) = TFOCS.optimize(new SmoothQuadDVector(b),
+      new ProductVectorDVector(A),
       new ProxL1Vector(lambda),
       x0)
 
