@@ -19,12 +19,12 @@ package org.apache.spark.mllib.optimization.tfocs.examples
 
 import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.optimization.tfocs.{
-  ProductVectorRDDVector,
+  ProductVectorDVector,
   ProxL1Vector,
-  SmoothQuadRDDVector,
+  SmoothQuadDVector,
   TFOCS
 }
-import org.apache.spark.rdd.RDD
+import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 
 /** Helper to solve lasso regression problems using the tfocs implementation. */
 object SolverLasso {
@@ -32,18 +32,16 @@ object SolverLasso {
   /**
    * Run a lasso solver on the provided data, using the tfocs implementation.
    *
-   * @param A The design matrix, represented as an RDD of row vectors.
-   * @param b The observed values, a column vector of doubles represented as an RDD[Vector]. The
-   *        double values within each partition are collected into Vectors for improved performance.
-   *        The values of b must be co-partitioned with those of A.
+   * @param A The design matrix, represented as a DMatrix.
+   * @param b The observed values, represented as a DVector.
    * @param lambda The regularization term.
    * @param x0 The starting weights.
    *
    * @return The optimized weights returned by the solver.
    */
-  def run(A: RDD[Vector], b: RDD[Vector], lambda: Double, x0: Vector): Vector =
-    TFOCS.optimize(new SmoothQuadRDDVector(b),
-      new ProductVectorRDDVector(A),
+  def run(A: DMatrix, b: DVector, lambda: Double, x0: Vector): Vector =
+    TFOCS.optimize(new SmoothQuadDVector(b),
+      new ProductVectorDVector(A),
       new ProxL1Vector(lambda),
       x0)._1
 }
