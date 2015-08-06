@@ -49,7 +49,7 @@ trait ProxCapableFunction[X] {
 }
 
 /**
- * A function that returns constant zero.
+ * The proximity operator for constant zero.
  *
  * NOTE In matlab tfocs this functionality is implemented in prox_0.m.
  */
