@@ -123,6 +123,6 @@ class ProjBoxVector(l: Vector, u: Vector) extends ProxCapableFunction[Vector] {
   }
 
   override def apply(x: Vector): Double = if (x.toArray.zip(limits).exists(y =>
-    // If any element is outside of the element's bounds, return infinity.
+    // If an element is outside of that element's bounds, return infinity.
     y._1 > y._2._2 || y._1 < y._2._1)) { Double.PositiveInfinity } else { 0.0 }
 }
