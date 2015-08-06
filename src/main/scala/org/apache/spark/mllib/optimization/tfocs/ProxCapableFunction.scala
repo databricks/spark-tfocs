@@ -30,11 +30,11 @@ import org.apache.spark.mllib.linalg.{ DenseVector, Vector, Vectors }
  */
 trait ProxCapableFunction[X] {
   /**
-   * Evaluates prox_h at x with smoothing parameter t, returning both z and h(z) depending on the
-   * mode specified.
+   * Evaluates prox_h at x with parameter t, returning both z and h(z) depending on the mode
+   * specified.
    *
    * @param x The vector on which to evaluate the function.
-   * @param t The smoothing parameter.
+   * @param t The proximity parameter.
    * @param mode The computation mode. If mode.f is true, h(z) is returned. If mode.g is true, z
    *        is returned.
    * @return A Value containing h(z) and/or z, depending on the 'mode' parameter. The h(z) value
@@ -43,7 +43,7 @@ trait ProxCapableFunction[X] {
   def apply(x: X, t: Double, mode: Mode): Value[X]
 
   /**
-   * Evaluates prox_h at x with smoothing parameter t == 0.0, returning z.
+   * Evaluates prox_h at x with parameter t == 0.0, returning z.
    */
   def apply(x: X): Double = apply(x, 0.0, Mode(f = true, g = false)).f.get
 }
