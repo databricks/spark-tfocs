@@ -67,7 +67,7 @@ class TFOCSSuite extends FunSuite with MLlibTestSparkContext {
 
     val expectedX = Vectors.dense(-0.049755786974910, 0, 0.076369527414210, 0, 0, 0, 0,
       0.111550837996771, -0.314626347477663, -0.503782689620966)
-    val expectedLossHistory = Array(0.113425611210499, 0.077669187887145, 0.061961458212103,
+    val expectedLossHistory = Vectors.dense(0.113425611210499, 0.077669187887145, 0.061961458212103,
       0.052553214376800, 0.046562416223286, 0.042826602488959, 0.040906876606451, 0.040100239630275,
       0.039547309449369, 0.039102810446688, 0.038743759101449, 0.038473157445446, 0.038243690177961,
       0.037820176724358, 0.037674646255497, 0.037595407614782, 0.037541273717515, 0.037488658690212,
@@ -93,7 +93,7 @@ class TFOCSSuite extends FunSuite with MLlibTestSparkContext {
     assert(x ~= expectedX relTol 1e-6,
       "Each weight vector element should match the expected value, within tolerance.")
 
-    assert(Vectors.dense(lossHistory) ~= Vectors.dense(expectedLossHistory) relTol 1e-12,
+    assert(Vectors.dense(lossHistory) ~= expectedLossHistory relTol 1e-12,
       "The loss value on each iteration should match the expected value, within tolerance.")
   }
 }
