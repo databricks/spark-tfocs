@@ -51,6 +51,8 @@ trait SmoothFunction[X] {
  * The squared error function applied to a DVector, with a constant factor of 0.5.
  *
  * @param x0 The base vector against which the squared error difference is computed.
+ *
+ * NOTE In matlab tfocs this functionality is implemented in smooth_quad.m.
  */
 class SmoothQuadDVector(x0: DVector) extends SmoothFunction[DVector] {
 
@@ -79,6 +81,8 @@ class SmoothQuadDVector(x0: DVector) extends SmoothFunction[DVector] {
  *
  * @param x0 The vector against which loss should be computed.
  * @param tau The huber loss parameter.
+ *
+ * NOTE In matlab tfocs this functionality is implemented in smooth_huber.m.
  */
 class SmoothHuberDVector(x0: DVector, tau: Double)
     extends SmoothFunction[DVector] with Serializable {
@@ -125,6 +129,8 @@ class SmoothHuberDVector(x0: DVector, tau: Double)
  *
  * @param y The observed values, labeled as binary 0/1.
  * @param mu The variable values.
+ *
+ * NOTE In matlab tfocs this functionality is implemented in smooth_logLLogistic.m.
  */
 class SmoothLogLLogisticDVector(y: DVector) extends SmoothFunction[DVector] with Serializable {
 

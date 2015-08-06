@@ -40,7 +40,11 @@ trait LinearFunction[X, Y] {
   def t: LinearFunction[Y, X]
 }
 
-/** Compute the product of a DMatrix with a Vector to produce a DVector. */
+/**
+ * Compute the product of a DMatrix with a Vector to produce a DVector.
+ *
+ * NOTE In matlab tfocs this functionality is implemented in linop_matrix.m.
+ */
 class ProductVectorDVector(private val matrix: DMatrix)
     extends LinearFunction[Vector, DVector] {
 
@@ -61,6 +65,8 @@ class ProductVectorDVector(private val matrix: DMatrix)
  *
  * The implementation multiplies each row of 'matrix' by the corresponding value of the column
  * vector 'x' and sums the scaled vectors thus obtained.
+ *
+ * NOTE In matlab tfocs this functionality is implemented in linop_matrix.m.
  */
 class TransposeProductVectorDVector(@transient private val matrix: DMatrix)
     extends LinearFunction[DVector, Vector] with java.io.Serializable {

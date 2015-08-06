@@ -52,6 +52,9 @@ object TFOCS extends Logging {
    *
    * @return A tuple containing two elements. The first element is a row vector containing the
    *         optimized 'x' values. The second element contains the objective function history.
+   *
+   * NOTE In matlab tfocs this functionality is implemented in tfocs.m, tfocs_initialize.m,
+   *      tfocs_AT.m, tfocs_backtrack.m, tfocs_iterate.m, and tfocs_cleanup.m.
    */
   def optimize[R, C](
     f: SmoothFunction[C],
