@@ -86,9 +86,7 @@ class ProxL1Vector(scale: Double) extends ProxCapableFunction[Vector] {
 }
 
 /**
- * A projection onto the nonnegative orthant, implemented using an indicator function. The indicator
- * function returns 0 for values within the nonnegative orthant and Double.PositiveInfinity
- * otherwise.
+ * A projection onto the nonnegative orthant, implemented using a zero/infinity indicator function.
  *
  * NOTE In matlab tfocs this functionality is implemented in proj_Rplus.m.
  */
@@ -110,8 +108,7 @@ class ProjRPlusVector extends ProxCapableFunction[Vector] {
 
 /**
  * A projection onto a simple box defined by upper and lower limits on each vector element,
- * implemented using an indicator function. The indicator function returns 0 for values within the
- * box and Double.PositiveInfinity otherwise.
+ * implemented using a zero/infinity indicator function.
  *
  * NOTE In matlab tfocs this functionality is implemented in proj_box.m.
  */
