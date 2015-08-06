@@ -26,30 +26,31 @@ import org.apache.spark.mllib.util.MLlibTestSparkContext
 class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext {
 
   lazy val matrix = sc.parallelize(Array(Vectors.dense(1.0, 2.0, 3.0),
-    Vectors.dense(4.0, 5.0, 6.0)))
+    Vectors.dense(4.0, 5.0, 6.0)), 2)
 
   test("ProductVectorDVector multiplies properly") {
 
-    assert(Array(50.0, 122.0).deep ==
-      new ProductVectorDVector(matrix)(
-        Vectors.dense(7.0, 8.0, 9.0)).flatMap(_.toArray).collect().deep,
+    val f = new ProductVectorDVector(matrix)
+    val x = Vectors.dense(7.0, 8.0, 9.0)
+    var result = f(x)
+    assert(Vectors.dense(result.flatMap(_.toArray).collect()) == Vectors.dense(50.0, 122.0),
       "should return the correct product")
   }
 
   test("TransposeProductVectorDVector multiplies properly") {
 
-    assert(Vectors.dense(29.0, 40.0, 51.0) ==
-      new TransposeProductVectorDVector(matrix)(sc.parallelize(Array(Vectors.dense(5.0),
-        Vectors.dense(6.0)), 2)),
-      "should return the correct product")
+    var f = new TransposeProductVectorDVector(matrix)
+    val y = sc.parallelize(Array(Vectors.dense(5.0), Vectors.dense(6.0)), 2)
+    var result = f(y)
+    assert(result == Vectors.dense(29.0, 40.0, 51.0), "should return the correct product")
   }
 
   test("TransposeProductVectorDVector checks for mismatched partition vectors") {
 
+    val f = new TransposeProductVectorDVector(matrix)
+    val y = sc.parallelize(Array(Vectors.dense(5.0, 6.0), Vectors.zeros(0)), 2)
     intercept[SparkException] {
-      new TransposeProductVectorDVector(matrix)(
-        sc.parallelize(Array(Vectors.dense(5.0, 6.0), Vectors.zeros(0)), 2))
+      f(y)
     }
   }
-
 }
