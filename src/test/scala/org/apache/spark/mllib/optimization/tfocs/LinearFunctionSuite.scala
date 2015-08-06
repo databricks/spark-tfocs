@@ -21,6 +21,7 @@ import org.scalatest.FunSuite
 
 import org.apache.spark.SparkException
 import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 
 class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext {
@@ -33,7 +34,7 @@ class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext {
     val f = new ProductVectorDVector(matrix)
     val x = Vectors.dense(7.0, 8.0, 9.0)
     var result = f(x)
-    assert(Vectors.dense(result.flatMap(_.toArray).collect()) == Vectors.dense(50.0, 122.0),
+    assert(Vectors.dense(result.collectElements) == Vectors.dense(50.0, 122.0),
       "should return the correct product")
   }
 

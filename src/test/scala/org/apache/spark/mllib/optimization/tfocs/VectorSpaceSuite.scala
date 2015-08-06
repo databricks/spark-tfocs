@@ -21,6 +21,7 @@ import org.scalatest.FunSuite
 
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.util.MLlibTestSparkContext
+import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 
 class VectorSpaceSuite extends FunSuite with MLlibTestSparkContext {
@@ -48,10 +49,10 @@ class VectorSpaceSuite extends FunSuite with MLlibTestSparkContext {
     val a = sc.parallelize(Array(Vectors.dense(2.0, 3.0), Vectors.dense(4.0)), 2)
     val beta = 4.0
     val b = sc.parallelize(Array(Vectors.dense(5.0, 6.0), Vectors.dense(7.0)), 2)
+    val combination = DVectorVectorSpace.combine(alpha, a, beta, b)
     val expectedCombination =
       Vectors.dense(1.1 * 2.0 + 4.0 * 5.0, 1.1 * 3.0 + 4.0 * 6.0, 1.1 * 4.0 + 4.0 * 7.0)
-    assert(Vectors.dense(DVectorVectorSpace.combine(alpha, a, beta, b).flatMap(_.toArray).toArray)
-      == expectedCombination,
+    assert(Vectors.dense(combination.collectElements) == expectedCombination,
       "DVectorVectorSpace.combine should return the correct result.")
   }
 

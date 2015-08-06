@@ -45,6 +45,8 @@ private[tfocs] class DVectorFunctions(self: DVector) {
       },
       combOp = combOp)
 
+  def collectElements: Array[Double] = self.flatMap(_.toArray).collect
+
   def diff(other: DVector): DVector =
     self.zip(other).map({ x =>
       val ret = x._1.copy

@@ -21,6 +21,7 @@ import org.scalatest.FunSuite
 
 import org.apache.spark.SparkException
 import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 import org.apache.spark.mllib.util.TestingUtils._
 
@@ -38,7 +39,7 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
     assert(f == expectedF, "function value should be correct")
 
     val expectedG = Vectors.dense(10.0 - 1.0, 20.0 - 2.0, 30.0 - 3.0)
-    assert(Vectors.dense(g.flatMap(_.toArray).collect) == expectedG,
+    assert(Vectors.dense(g.collectElements) == expectedG,
       "function gradient should be correct")
   }
 
@@ -67,7 +68,7 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
       "function value should be correct")
 
     val expectedG1 = Vectors.dense(.1 / .2, -.2 / .2, -.3 / .3, .4 / .4)
-    assert(Vectors.dense(g1.flatMap(_.toArray).collect) ~= expectedG1 relTol 1e-15,
+    assert(Vectors.dense(g1.collectElements) ~= expectedG1 relTol 1e-15,
       "function gradient should be correct")
 
     val fun2 = new SmoothHuberDVector(x0, 0.3)
@@ -77,7 +78,7 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
     assert(f2 ~= expectedF2 relTol 1e-15, "function value should be correct")
 
     val expectedG2 = Vectors.dense(.1 / .3, -.2 / .3, -.3 / .3, .4 / .4)
-    assert(Vectors.dense(g2.flatMap(_.toArray).collect) ~= expectedG2 relTol 1e-15,
+    assert(Vectors.dense(g2.collectElements) ~= expectedG2 relTol 1e-15,
       "function gradient should be correct")
   }
 
@@ -101,7 +102,6 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
       0.0 - 1.0 / (1.0 + math.exp(-0.3)),
       1.0 - math.exp(-0.4) / (1.0 + math.exp(-0.4)),
       1.0 - math.exp(0.0) / (1.0 + math.exp(0.0)))
-    assert(Vectors.dense(g.flatMap(_.toArray).collect) == expectedG,
-      "function gradient should be correct")
+    assert(Vectors.dense(g.collectElements) == expectedG, "function gradient should be correct")
   }
 }
