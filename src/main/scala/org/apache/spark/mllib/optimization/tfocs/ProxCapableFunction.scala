@@ -103,7 +103,7 @@ class ProjRPlusVector extends ProxCapableFunction[Vector] {
  * implemented using an indicator function. The indicator function returns 0 for values within the
  * box and Double.PositiveInfinity otherwise.
  *
- * NOTE In matlab tfocs this functionality is implemented in prox_box.m.
+ * NOTE In matlab tfocs this functionality is implemented in proj_box.m.
  */
 class ProjBoxVector(l: Vector, u: Vector) extends ProxCapableFunction[Vector] {
 
