@@ -41,7 +41,7 @@ class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext {
 
   test("TransposeProductVectorDVector multiplies properly") {
 
-    var f = new TransposeProductVectorDVector(matrix)
+    val f = new TransposeProductVectorDVector(matrix)
     val y = sc.parallelize(Array(Vectors.dense(5.0), Vectors.dense(6.0)), 2)
     val result = f(y)
     val expectedResult = Vectors.dense(1 * 5 + 4 * 6, 2 * 5 + 5 * 6, 3 * 5 + 6 * 6)
