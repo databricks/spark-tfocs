@@ -33,8 +33,9 @@ class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext {
 
     val f = new ProductVectorDVector(matrix)
     val x = Vectors.dense(7.0, 8.0, 9.0)
-    var result = f(x)
-    assert(Vectors.dense(result.collectElements) == Vectors.dense(50.0, 122.0),
+    val result = f(x)
+    val expectedResult = Vectors.dense(1 * 7 + 2 * 8 + 3 * 9, 4 * 7 + 5 * 8 + 6 * 9)
+    assert(Vectors.dense(result.collectElements) == expectedResult,
       "should return the correct product")
   }
 
@@ -42,8 +43,9 @@ class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext {
 
     var f = new TransposeProductVectorDVector(matrix)
     val y = sc.parallelize(Array(Vectors.dense(5.0), Vectors.dense(6.0)), 2)
-    var result = f(y)
-    assert(result == Vectors.dense(29.0, 40.0, 51.0), "should return the correct product")
+    val result = f(y)
+    val expectedResult = Vectors.dense(1 * 5 + 4 * 6, 2 * 5 + 5 * 6, 3 * 5 + 6 * 6)
+    assert(result == expectedResult, "should return the correct product")
   }
 
   test("TransposeProductVectorDVector checks for mismatched partition vectors") {
