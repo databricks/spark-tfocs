@@ -82,7 +82,8 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
       "function gradient should be correct")
   }
 
-  test("The SmoothLogLLogisticDVector should return the expected value and gradient") {
+  test("The SmoothLogLLogisticDVector implementation should return the expected value and " +
+    "gradient") {
 
     val y = sc.parallelize(Array(Vectors.dense(1.0, 0.0), Vectors.dense(0.0, 1.0, 1.0)), 2)
     val mu = sc.parallelize(Array(Vectors.dense(0.1, -0.2), Vectors.dense(0.3, -0.4, 0.0)), 2)
