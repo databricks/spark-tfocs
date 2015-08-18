@@ -24,7 +24,7 @@ import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 
-class LinearFunctionSuite extends FunSuite with MLlibTestSparkContext {
+class LinearOperatorSuite extends FunSuite with MLlibTestSparkContext {
 
   lazy val matrix = sc.parallelize(Array(Vectors.dense(1.0, 2.0, 3.0),
     Vectors.dense(4.0, 5.0, 6.0)), 2)
