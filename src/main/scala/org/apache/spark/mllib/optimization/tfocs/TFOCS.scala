@@ -85,9 +85,9 @@ object TFOCS extends Logging {
     var backtrack_simple = true
     val backtrack_tol = 1e-10
 
-    var cntr_Ay = 0
-    var cntr_Ax = 0
-    val cntr_reset = 50
+    var cntrAy = 0
+    var cntrAx = 0
+    val cntrReset = 50
 
     var hasConverged = false
     for (nIter <- 1 to numIterations if !hasConverged) {
@@ -113,11 +113,11 @@ object TFOCS extends Logging {
         theta = 2.0 / (1.0 + math.sqrt(1.0 + 4.0 * (L / L_old) / (theta_old * theta_old)))
 
         y = rows.combine(1.0 - theta, x_old, theta, z_old)
-        val a_y = if (cntr_Ay >= cntr_reset) {
-          cntr_Ay = 0
+        val a_y = if (cntrAy >= cntrReset) {
+          cntrAy = 0
           A(y)
         } else {
-          cntr_Ay = cntr_Ay + 1
+          cntrAy = cntrAy + 1
           cols.combine(1.0 - theta, a_x_old, theta, a_z_old)
         }
         if (!backtrack_simple) cols.cache(a_y)
@@ -136,11 +136,11 @@ object TFOCS extends Logging {
 
         x = rows.combine(1.0 - theta, x_old, theta, z)
         rows.cache(x)
-        a_x = if (cntr_Ax >= cntr_reset) {
-          cntr_Ax = 0
+        a_x = if (cntrAx >= cntrReset) {
+          cntrAx = 0
           A(x)
         } else {
-          cntr_Ax = cntr_Ax + 1
+          cntrAx = cntrAx + 1
           cols.combine(1.0 - theta, a_x_old, theta, a_z)
         }
         cols.cache(a_x)
