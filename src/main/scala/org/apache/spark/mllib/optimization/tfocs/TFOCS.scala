@@ -58,7 +58,7 @@ object TFOCS extends Logging {
    */
   def optimize[R, C](
     f: SmoothFunction[C],
-    A: LinearFunction[R, C],
+    A: LinearOperator[R, C],
     h: ProxCapableFunction[R],
     x0: R,
     numIterations: Int = 200,
@@ -126,7 +126,7 @@ object TFOCS extends Logging {
 
         f_y = f_y_
         if (!backtrack_simple) cols.cache(g_Ay)
-        g_y = A.t(g_Ay)
+        g_y = A.a(g_Ay)
         rows.cache(g_y)
         val step = 1.0 / (theta * L)
         z = h(rows.combine(1.0, z_old, -step, g_y), step, Mode(false, true)).g.get

@@ -23,21 +23,21 @@ import org.apache.spark.mllib.optimization.tfocs.CheckedIteratorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 
 /**
- * A trait for linear functions supporting application of a function and of its transpose.
+ * A trait for linear operators supporting application of an operator and of its adjoint.
  *
  * @tparam X Type representing an input vector.
  * @tparam Y Type representing an output vector.
  */
-trait LinearFunction[X, Y] {
+trait LinearOperator[X, Y] {
   /**
-   * Evaluates this function at x.
+   * Evaluates this operator at x.
    */
   def apply(x: X): Y
 
   /**
-   * The transpose of this function.
+   * The adjoint of this operator.
    */
-  def t: LinearFunction[Y, X]
+  def a: LinearOperator[Y, X]
 }
 
 /**
@@ -46,7 +46,7 @@ trait LinearFunction[X, Y] {
  * NOTE In matlab tfocs this functionality is implemented in linop_matrix.m.
  */
 class ProductVectorDVector(private val matrix: DMatrix)
-    extends LinearFunction[Vector, DVector] {
+    extends LinearOperator[Vector, DVector] {
 
   matrix.cache()
 
@@ -57,19 +57,19 @@ class ProductVectorDVector(private val matrix: DMatrix)
       Iterator.single(new DenseVector(partitionRows.map(row => BLAS.dot(row, bcX.value)).toArray)))
   }
 
-  override def t: LinearFunction[DVector, Vector] = new TransposeProductVectorDVector(matrix)
+  override def a: LinearOperator[DVector, Vector] = new AdjointProductVectorDVector(matrix)
 }
 
 /**
- * Compute the transpose product of a DMatrix with a DVector to produce a Vector.
+ * Compute the adjoint product of a DMatrix with a DVector to produce a Vector.
  *
  * The implementation multiplies each row of 'matrix' by the corresponding value of the column
  * vector 'x' and sums the scaled vectors thus obtained.
  *
  * NOTE In matlab tfocs this functionality is implemented in linop_matrix.m.
  */
-class TransposeProductVectorDVector(@transient private val matrix: DMatrix)
-    extends LinearFunction[DVector, Vector] with java.io.Serializable {
+class AdjointProductVectorDVector(@transient private val matrix: DMatrix)
+    extends LinearOperator[DVector, Vector] with java.io.Serializable {
 
   matrix.cache()
 
@@ -107,5 +107,5 @@ class TransposeProductVectorDVector(@transient private val matrix: DMatrix)
     )
   }
 
-  override def t: LinearFunction[Vector, DVector] = new ProductVectorDVector(matrix)
+  override def a: LinearOperator[Vector, DVector] = new ProductVectorDVector(matrix)
 }
