@@ -29,9 +29,9 @@ class LinearOperatorSuite extends FunSuite with MLlibTestSparkContext {
   lazy val matrix = sc.parallelize(Array(Vectors.dense(1.0, 2.0, 3.0),
     Vectors.dense(4.0, 5.0, 6.0)), 2)
 
-  test("Product multiplies properly") {
+  test("LinopMatrix multiplies properly") {
 
-    val f = new Product(matrix)
+    val f = new LinopMatrix(matrix)
     val x = Vectors.dense(7.0, 8.0, 9.0)
     val result = f(x)
     val expectedResult = Vectors.dense(1 * 7 + 2 * 8 + 3 * 9, 4 * 7 + 5 * 8 + 6 * 9)
@@ -39,18 +39,18 @@ class LinearOperatorSuite extends FunSuite with MLlibTestSparkContext {
       "should return the correct product")
   }
 
-  test("AdjointProduct multiplies properly") {
+  test("LinopMatrixAdjoint multiplies properly") {
 
-    val f = new AdjointProduct(matrix)
+    val f = new LinopMatrixAdjoint(matrix)
     val y = sc.parallelize(Array(Vectors.dense(5.0), Vectors.dense(6.0)), 2)
     val result = f(y)
     val expectedResult = Vectors.dense(1 * 5 + 4 * 6, 2 * 5 + 5 * 6, 3 * 5 + 6 * 6)
     assert(result == expectedResult, "should return the correct product")
   }
 
-  test("AdjointProduct checks for mismatched partition vectors") {
+  test("LinopMatrixAdjoint checks for mismatched partition vectors") {
 
-    val f = new AdjointProduct(matrix)
+    val f = new LinopMatrixAdjoint(matrix)
     val y = sc.parallelize(Array(Vectors.dense(5.0, 6.0), Vectors.zeros(0)), 2)
     intercept[SparkException] {
       f(y)
