@@ -20,11 +20,14 @@ package org.apache.spark.mllib.optimization.tfocs
 import org.apache.spark.mllib.linalg.{ BLAS, DenseVector, Vector }
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 
-/** Functional helpers for DVector objects representing distributed one dimensional vectors. */
+/**
+ * Extra functions available on DVectors through an implicit conversion. DVectors are represented
+ * using RDD[Vector], and these helper functions apply operations to the values within each Vector
+ * of the RDD.
+ */
 private[tfocs] class DVectorFunctions(self: DVector) {
 
-  def mapElements(f: Double => Double): DVector =
-    self.map(x => new DenseVector(x.toArray.map(f)))
+  def mapElements(f: Double => Double): DVector = self.map(x => new DenseVector(x.toArray.map(f)))
 
   def zipElements(other: DVector, f: (Double, Double) => Double): DVector =
     self.zip(other).map({ x =>
