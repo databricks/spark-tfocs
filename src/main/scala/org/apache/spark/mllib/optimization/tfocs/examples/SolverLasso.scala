@@ -19,9 +19,9 @@ package org.apache.spark.mllib.optimization.tfocs.examples
 
 import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.optimization.tfocs.{
-  ProductVectorDVector,
-  ProxL1Vector,
-  SmoothQuadDVector,
+  Product,
+  ProxL1,
+  SmoothQuad,
   TFOCS
 }
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
@@ -40,8 +40,5 @@ object SolverLasso {
    * @return The optimized weights returned by the solver.
    */
   def run(A: DMatrix, b: DVector, lambda: Double, x0: Vector): Vector =
-    TFOCS.optimize(new SmoothQuadDVector(b),
-      new ProductVectorDVector(A),
-      new ProxL1Vector(lambda),
-      x0)._1
+    TFOCS.optimize(new SmoothQuad(b), new Product(A), new ProxL1(lambda), x0)._1
 }

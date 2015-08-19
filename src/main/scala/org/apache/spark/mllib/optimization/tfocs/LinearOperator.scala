@@ -45,7 +45,7 @@ trait LinearOperator[X, Y] {
  *
  * NOTE In matlab tfocs this functionality is implemented in linop_matrix.m.
  */
-class ProductVectorDVector(private val matrix: DMatrix)
+class Product(private val matrix: DMatrix)
     extends LinearOperator[Vector, DVector] {
 
   matrix.cache()
@@ -57,7 +57,7 @@ class ProductVectorDVector(private val matrix: DMatrix)
       Iterator.single(new DenseVector(partitionRows.map(row => BLAS.dot(row, bcX.value)).toArray)))
   }
 
-  override def a: LinearOperator[DVector, Vector] = new AdjointProductVectorDVector(matrix)
+  override def a: LinearOperator[DVector, Vector] = new AdjointProduct(matrix)
 }
 
 /**
@@ -68,7 +68,7 @@ class ProductVectorDVector(private val matrix: DMatrix)
  *
  * NOTE In matlab tfocs this functionality is implemented in linop_matrix.m.
  */
-class AdjointProductVectorDVector(@transient private val matrix: DMatrix)
+class AdjointProduct(@transient private val matrix: DMatrix)
     extends LinearOperator[DVector, Vector] with java.io.Serializable {
 
   matrix.cache()
@@ -107,5 +107,5 @@ class AdjointProductVectorDVector(@transient private val matrix: DMatrix)
     )
   }
 
-  override def a: LinearOperator[Vector, DVector] = new ProductVectorDVector(matrix)
+  override def a: LinearOperator[Vector, DVector] = new Product(matrix)
 }

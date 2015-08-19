@@ -60,10 +60,7 @@ class TFOCSSuite extends FunSuite with MLlibTestSparkContext {
     val lambda = 0.0298
     val x0 = Vectors.zeros(10)
 
-    val (x, lossHistory) = TFOCS.optimize(new SmoothQuadDVector(b),
-      new ProductVectorDVector(A),
-      new ProxL1Vector(lambda),
-      x0)
+    val (x, lossHistory) = TFOCS.optimize(new SmoothQuad(b), new Product(A), new ProxL1(lambda), x0)
 
     val expectedX = Vectors.dense(-0.049755786974910, 0, 0.076369527414210, 0, 0, 0, 0,
       0.111550837996771, -0.314626347477663, -0.503782689620966)

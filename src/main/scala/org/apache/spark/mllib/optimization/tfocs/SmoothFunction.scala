@@ -54,7 +54,7 @@ trait SmoothFunction[X] {
  *
  * NOTE In matlab tfocs this functionality is implemented in smooth_quad.m.
  */
-class SmoothQuadDVector(x0: DVector) extends SmoothFunction[DVector] {
+class SmoothQuad(x0: DVector) extends SmoothFunction[DVector] {
 
   x0.cache()
 
@@ -84,8 +84,7 @@ class SmoothQuadDVector(x0: DVector) extends SmoothFunction[DVector] {
  *
  * NOTE In matlab tfocs this functionality is implemented in smooth_huber.m.
  */
-class SmoothHuberDVector(x0: DVector, tau: Double)
-    extends SmoothFunction[DVector] with Serializable {
+class SmoothHuber(x0: DVector, tau: Double) extends SmoothFunction[DVector] with Serializable {
 
   x0.cache()
 
@@ -132,7 +131,7 @@ class SmoothHuberDVector(x0: DVector, tau: Double)
  *
  * NOTE In matlab tfocs this functionality is implemented in smooth_logLLogistic.m.
  */
-class SmoothLogLLogisticDVector(y: DVector) extends SmoothFunction[DVector] with Serializable {
+class SmoothLogLLogistic(y: DVector) extends SmoothFunction[DVector] with Serializable {
 
   y.cache()
 

@@ -56,7 +56,7 @@ trait ProxCapableFunction[X] {
  *
  * NOTE In matlab tfocs this functionality is implemented in prox_0.m.
  */
-class ProxZeroVector extends ProxCapableFunction[Vector] {
+class ProxZero extends ProxCapableFunction[Vector] {
 
   override def apply(z: Vector, t: Double, mode: Mode): Value[Vector] =
     Value(Some(0.0), Some(z))
@@ -69,7 +69,7 @@ class ProxZeroVector extends ProxCapableFunction[Vector] {
  *
  * NOTE In matlab tfocs this functionality is implemented in prox_l1.m.
  */
-class ProxL1Vector(scale: Double) extends ProxCapableFunction[Vector] {
+class ProxL1(scale: Double) extends ProxCapableFunction[Vector] {
 
   override def apply(z: Vector, t: Double, mode: Mode): Value[Vector] = {
     val shrinkage = scale * t
@@ -90,7 +90,7 @@ class ProxL1Vector(scale: Double) extends ProxCapableFunction[Vector] {
  *
  * NOTE In matlab tfocs this functionality is implemented in proj_Rplus.m.
  */
-class ProjRPlusVector extends ProxCapableFunction[Vector] {
+class ProjRPlus extends ProxCapableFunction[Vector] {
 
   override def apply(z: Vector, t: Double, mode: Mode): Value[Vector] = {
 
@@ -112,7 +112,7 @@ class ProjRPlusVector extends ProxCapableFunction[Vector] {
  *
  * NOTE In matlab tfocs this functionality is implemented in proj_box.m.
  */
-class ProjBoxVector(l: Vector, u: Vector) extends ProxCapableFunction[Vector] {
+class ProjBox(l: Vector, u: Vector) extends ProxCapableFunction[Vector] {
 
   val limits = l.toArray.zip(u.toArray)
 

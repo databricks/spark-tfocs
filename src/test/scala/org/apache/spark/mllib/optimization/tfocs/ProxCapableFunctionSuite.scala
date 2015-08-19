@@ -25,8 +25,8 @@ import org.apache.spark.mllib.util.TestingUtils._
 
 class ProxCapableFunctionSuite extends FunSuite {
 
-  test("The ProxZeroVector implementation should return the expected value and vector") {
-    val fun = new ProxZeroVector()
+  test("The ProxZero implementation should return the expected value and vector") {
+    val fun = new ProxZero()
     val x = Vectors.dense(10.0, -20.0, 30.0)
     assert(fun(x) == 0.0, "value should be correct")
     val Value(Some(f), Some(g)) = fun(x, 1.5, Mode(true, true))
@@ -34,8 +34,8 @@ class ProxCapableFunctionSuite extends FunSuite {
     assert(g == Vectors.dense(10.0, -20.0, 30.0), "minimizing value should be correct")
   }
 
-  test("The ProxL1Vector implementation should return the expected value and vector") {
-    val fun = new ProxL1Vector(1.1)
+  test("The ProxL1 implementation should return the expected value and vector") {
+    val fun = new ProxL1(1.1)
     val x = Vectors.dense(10.0, -20.0, 30.0)
     assert(fun(x) == 66.0, "value should be correct")
     val Value(Some(f), Some(g)) = fun(x, 1.5, Mode(true, true))
@@ -44,10 +44,10 @@ class ProxCapableFunctionSuite extends FunSuite {
       "minimizing value should be correct")
   }
 
-  test("The ProjRPlusVector implementation should return the expected value and vector") {
+  test("The ProjRPlus implementation should return the expected value and vector") {
 
     // Already nonnegative.
-    val fun = new ProjRPlusVector()
+    val fun = new ProjRPlus()
     val x1 = Vectors.dense(10.0, 20.0, 30.0)
     val Value(Some(f1), Some(g1)) = fun(x1, 1.0, Mode(true, true))
     assert(f1 == 0.0, "value should be correct")
@@ -64,10 +64,10 @@ class ProxCapableFunctionSuite extends FunSuite {
       "value outisde the nonnegative orthant should be correct for function short form")
   }
 
-  test("The ProjBoxVector implementation should return the expected value and vector") {
+  test("The ProjBox implementation should return the expected value and vector") {
 
     // Already within box.
-    val fun1 = new ProjBoxVector(Vectors.dense(9, 19, 29), Vectors.dense(11, 21, 31))
+    val fun1 = new ProjBox(Vectors.dense(9, 19, 29), Vectors.dense(11, 21, 31))
     val x1 = Vectors.dense(10.0, 20.0, 30.0)
     val Value(Some(f1), Some(g1)) = fun1(x1, 1.0, Mode(true, true))
     assert(f1 == 0.0, "value should be correct")
@@ -75,17 +75,17 @@ class ProxCapableFunctionSuite extends FunSuite {
     assert(fun1(x1) == 0.0, "value within the box should be correct for function short form")
 
     // Some elements outside box.
-    val fun2 = new ProjBoxVector(Vectors.dense(10.5, 19, 29), Vectors.dense(11, 21, 29.5))
+    val fun2 = new ProjBox(Vectors.dense(10.5, 19, 29), Vectors.dense(11, 21, 29.5))
     val x2 = Vectors.dense(10.0, 20.0, 30.0)
     val Value(Some(f2), Some(g2)) = fun2(x2, 1.0, Mode(true, true))
     assert(f2 == 0.0, "value should be correct")
     assert(g2 == Vectors.dense(10.5, 20, 29.5), "vector should be correct")
 
     // Some elements outside other boxes.
-    val fun3 = new ProjBoxVector(Vectors.dense(10.5, 19, 29), Vectors.dense(11, 21, 31))
+    val fun3 = new ProjBox(Vectors.dense(10.5, 19, 29), Vectors.dense(11, 21, 31))
     assert(fun3(x2) == Double.PositiveInfinity,
       "value outisde the box should be correct for function short form")
-    val fun4 = new ProjBoxVector(Vectors.dense(10, 19, 29), Vectors.dense(11, 21, 29.5))
+    val fun4 = new ProjBox(Vectors.dense(10, 19, 29), Vectors.dense(11, 21, 29.5))
     assert(fun4(x2) == Double.PositiveInfinity,
       "value outisde the box should be correct for function short form")
   }
