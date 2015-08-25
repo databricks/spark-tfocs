@@ -20,6 +20,7 @@ package org.apache.spark.mllib.optimization.tfocs
 import org.apache.spark.mllib.linalg.{ Vector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
+import org.apache.spark.storage.StorageLevel
 
 /**
  * A trait for smooth functions, with support for evaluating the function and computing its
@@ -53,10 +54,13 @@ trait SmoothFunction[X] {
  * @param x0 The base vector against which the squared error difference is computed.
  *
  * NOTE In matlab tfocs this functionality is implemented in smooth_quad.m.
+ * @see [[https://github.com/cvxr/TFOCS/blob/master/smooth_quad.m]]
  */
 class SmoothQuad(x0: DVector) extends SmoothFunction[DVector] {
 
-  x0.cache()
+  if (x0.getStorageLevel == StorageLevel.NONE) {
+    x0.cache()
+  }
 
   override def apply(x: DVector, mode: Mode): Value[DVector] = {
 
@@ -68,7 +72,10 @@ class SmoothQuad(x0: DVector) extends SmoothFunction[DVector] {
 
     val f = if (mode.f) {
       // Compute the squared error.
-      Some(g.treeAggregate(0.0)((sum, y) => sum + Math.pow(Vectors.norm(y, 2), 2), _ + _) / 2.0)
+      // TODO If f is required but not g, then performance might be improved by reimplementing as
+      // a single aggregate using 'x' and 'x0' without an intermediate 'g' DVector, which breaks
+      // per-element pipelining.
+      Some(g.aggregate(0.0)((sum, y) => sum + math.pow(Vectors.norm(y, 2), 2), _ + _) / 2.0)
     } else {
       None
     }
@@ -77,16 +84,19 @@ class SmoothQuad(x0: DVector) extends SmoothFunction[DVector] {
 }
 
 /**
- * The huber loss function applied to a DVector.
+ * The Huber loss function applied to a DVector.
  *
  * @param x0 The vector against which loss should be computed.
  * @param tau The huber loss parameter.
  *
  * NOTE In matlab tfocs this functionality is implemented in smooth_huber.m.
+ * @see [[https://github.com/cvxr/TFOCS/blob/master/smooth_huber.m]]
  */
 class SmoothHuber(x0: DVector, tau: Double) extends SmoothFunction[DVector] with Serializable {
 
-  x0.cache()
+  if (x0.getStorageLevel == StorageLevel.NONE) {
+    x0.cache()
+  }
 
   override def apply(x: DVector, mode: Mode): Value[DVector] = {
 
@@ -96,6 +106,9 @@ class SmoothHuber(x0: DVector, tau: Double) extends SmoothFunction[DVector] with
     if (mode.f && mode.g) diff.cache()
 
     val f = if (mode.f) {
+      // TODO If f is required but not g, then performance might be improved by reimplementing as
+      // a single aggregate using 'x' and 'x0' without an intermediate 'diff' DVector, which breaks
+      // per-element pipelining.
       Some(diff.aggregateElements(0.0)(
         seqOp = (sum, diff_i) => {
           // Find the huber loss, corresponding to the adjusted l2 loss when the magnitude is <= tau
@@ -130,37 +143,23 @@ class SmoothHuber(x0: DVector, tau: Double) extends SmoothFunction[DVector] with
  * @param mu The variable values.
  *
  * NOTE In matlab tfocs this functionality is implemented in smooth_logLLogistic.m.
+ * @see [[https://github.com/cvxr/TFOCS/blob/master/smooth_logLLogistic.m]]
  */
 class SmoothLogLLogistic(y: DVector) extends SmoothFunction[DVector] with Serializable {
 
-  y.cache()
+  if (y.getStorageLevel == StorageLevel.NONE) {
+    y.cache()
+  }
 
   override def apply(mu: DVector, mode: Mode): Value[DVector] = {
 
     val f = if (mode.f) {
-      Some(y.zip(mu).treeAggregate(0.0)(
-        seqOp = (_, _) match {
-          case (sum, (yPart, muPart)) => {
-
-            // Check that the y and mu partitions are the same size.
-            if (yPart.size != muPart.size) {
-              throw new IllegalArgumentException("Can only zip Vectors with the same number of " +
-                "elements")
-            }
-
-            yPart.toArray.zip(muPart.toArray).aggregate(0.0)(
-              seqop = (sum, elements) => {
-
-                // Compute the loss contribution for each y_i, mu_i pair, and add it to the
-                // aggregated sum.
-                val (y_i, mu_i) = elements
-                val yFactor = if (mu_i > 0.0) y_i - 1.0 else if (mu_i < 0.0) y_i else 0.0
-                sum + yFactor * mu_i - math.log1p(math.exp(-math.abs(mu_i)))
-              },
-              combop = _ + _)
-          }
-        },
-        combOp = _ + _))
+      // TODO Performance might be improved by reimplementing as a single aggregate rather than
+      // mapping through an intermediate DVector and summing, which breaks per-element pipelining.
+      Some(y.zipElements(mu, (y_i, mu_i) => {
+        val yFactor = if (mu_i > 0.0) y_i - 1.0 else if (mu_i < 0.0) y_i else 0.0
+        yFactor * mu_i - math.log1p(math.exp(-math.abs(mu_i)))
+      }).sum)
     } else {
       None
     }

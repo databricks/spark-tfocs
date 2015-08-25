@@ -20,6 +20,10 @@ package org.apache.spark.mllib.util
 import org.apache.spark.mllib.linalg.{ Matrix, Vector }
 import org.scalatest.exceptions.TestFailedException
 
+/**
+ * Testing utilities excerpted from the spark testing library.
+ * @see [[https://github.com/apache/spark/blob/master/mllib/src/test/scala/org/apache/spark/mllib/util/TestingUtils.scala]]
+ */
 object TestingUtils {
 
   val ABS_TOL_MSG = " using absolute tolerance"

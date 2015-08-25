@@ -17,47 +17,59 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-import org.apache.spark.mllib.linalg.{ BLAS, DenseVector, Vector }
+import org.apache.spark.mllib.linalg.{ BLAS, DenseVector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 
 /**
  * Extra functions available on DVectors through an implicit conversion. DVectors are represented
- * using RDD[Vector], and these helper functions apply operations to the values within each Vector
- * of the RDD.
+ * using RDD[DenseVector], and these helper functions apply operations to the values within each
+ * DenseVector of the RDD.
  */
 private[tfocs] class DVectorFunctions(self: DVector) {
 
-  def mapElements(f: Double => Double): DVector = self.map(x => new DenseVector(x.toArray.map(f)))
+  def mapElements(f: Double => Double): DVector = self.map(x => new DenseVector(x.values.map(f)))
 
   def zipElements(other: DVector, f: (Double, Double) => Double): DVector =
-    self.zip(other).map({ x =>
-      if (x._1.size != x._2.size) {
-        throw new IllegalArgumentException("Can only zipElements DVectors with the same number " +
-          "of elements")
-      }
-      new DenseVector(x._1.toArray.zip(x._2.toArray).map(y => f(y._1, y._2))): Vector
+    self.zip(other).map(_ match {
+      case (selfPart, otherPart) =>
+        if (selfPart.size != otherPart.size) {
+          throw new IllegalArgumentException("Can only zipElements DVectors with the same number " +
+            "of elements")
+        }
+        // NOTE DenseVectors are assumed here (not sparse safe).
+        val ret = new Array[Double](selfPart.size)
+        var i = 0
+        while (i < ret.size) {
+          ret(i) = f(selfPart(i), otherPart(i))
+          i += 1
+        }
+        new DenseVector(ret)
     })
 
   def aggregateElements(zeroValue: Double)(
     seqOp: (Double, Double) => Double,
     combOp: (Double, Double) => Double): Double =
-    self.treeAggregate(zeroValue)(
+    self.aggregate(zeroValue)(
       seqOp = (aggregate, vector) => {
-        val intermediate = vector.toArray.aggregate(zeroValue)(seqop = seqOp, combop = combOp)
-        combOp(intermediate, aggregate)
+        // NOTE DenseVectors are assumed here (not sparse safe).
+        val vectorAggregate = vector.values.aggregate(zeroValue)(seqop = seqOp, combop = combOp)
+        combOp(vectorAggregate, aggregate)
       },
       combOp = combOp)
 
-  def collectElements: Array[Double] = self.flatMap(_.toArray).collect
+  def collectElements: Array[Double] =
+    // NOTE DenseVectors are assumed here (not sparse safe).
+    self.collect().flatMap(_.values)
 
   def diff(other: DVector): DVector =
-    self.zip(other).map({ x =>
-      val ret = x._1.copy
-      BLAS.axpy(-1.0, x._2, ret)
-      ret
+    self.zip(other).map(_ match {
+      case (selfPart, otherPart) =>
+        val ret = selfPart.copy
+        BLAS.axpy(-1.0, otherPart, ret)
+        ret
     })
 
-  def sum: Double = self.treeAggregate(0.0)((sum, x) => sum + x.toArray.sum, _ + _)
+  def sum: Double = self.aggregate(0.0)((sum, x) => sum + x.values.sum, _ + _)
 }
 
 private[tfocs] object DVectorFunctions {

@@ -21,6 +21,7 @@ import org.apache.spark.mllib.linalg.BLAS
 import org.apache.spark.mllib.linalg.{ DenseVector, Vector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.CheckedIteratorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
+import org.apache.spark.storage.StorageLevel
 
 /**
  * A trait for linear operators supporting application of an operator and of its adjoint.
@@ -37,27 +38,32 @@ trait LinearOperator[X, Y] {
   /**
    * The adjoint of this operator.
    */
-  def a: LinearOperator[Y, X]
+  def t: LinearOperator[Y, X]
 }
 
 /**
  * Compute the product of a DMatrix with a Vector to produce a DVector.
  *
  * NOTE In matlab tfocs this functionality is implemented in linop_matrix.m.
+ * @see [[https://github.com/cvxr/TFOCS/blob/master/linop_matrix.m]]
  */
-class LinopMatrix(private val matrix: DMatrix)
-    extends LinearOperator[Vector, DVector] {
+class DenseVectorToDVectorLinOp(private val matrix: DMatrix)
+    extends LinearOperator[DenseVector, DVector] {
 
-  matrix.cache()
+  if (matrix.getStorageLevel == StorageLevel.NONE) {
+    matrix.cache()
+  }
 
-  override def apply(x: Vector): DVector = {
+  override def apply(x: DenseVector): DVector = {
     val bcX = matrix.context.broadcast(x)
     // Take the dot product of each matrix row with x.
+    // NOTE A DenseVector result is assumed here (not sparse safe).
     matrix.mapPartitions(partitionRows =>
       Iterator.single(new DenseVector(partitionRows.map(row => BLAS.dot(row, bcX.value)).toArray)))
   }
 
-  override def a: LinearOperator[DVector, Vector] = new LinopMatrixAdjoint(matrix)
+  override def t: LinearOperator[DVector, DenseVector] =
+    new TransposedDenseVectorToDVectorLinOp(matrix)
 }
 
 /**
@@ -67,33 +73,38 @@ class LinopMatrix(private val matrix: DMatrix)
  * vector 'x' and sums the scaled vectors thus obtained.
  *
  * NOTE In matlab tfocs this functionality is implemented in linop_matrix.m.
+ * @see [[https://github.com/cvxr/TFOCS/blob/master/linop_matrix.m]]
  */
-class LinopMatrixAdjoint(@transient private val matrix: DMatrix)
-    extends LinearOperator[DVector, Vector] with java.io.Serializable {
+class TransposedDenseVectorToDVectorLinOp(@transient private val matrix: DMatrix)
+    extends LinearOperator[DVector, DenseVector] with java.io.Serializable {
 
-  matrix.cache()
+  if (matrix.getStorageLevel == StorageLevel.NONE) {
+    matrix.cache()
+  }
 
-  private lazy val n = matrix.first.size
+  private lazy val n = matrix.first().size
 
-  override def apply(x: DVector): Vector = {
+  override def apply(x: DVector): DenseVector = {
     matrix.zipPartitions(x)({ (matrixPartition, xPartition) =>
       Iterator.single(
-        matrixPartition.checkedZip(xPartition.next.toArray.toIterator).aggregate(Vectors.zeros(n))(
-          seqop = (_, _) match {
-            case (sum, (matrix_i, x_i)) => {
-              // Multiply an element of x by its corresponding matrix row, and add to the running
-              // sum vector.
-              BLAS.axpy(x_i, matrix_i, sum)
-              sum
+        matrixPartition.checkedZip(xPartition.next.values.toIterator).aggregate(
+          // NOTE A DenseVector result is assumed here (not sparse safe).
+          Vectors.zeros(n).toDense)(
+            seqop = (_, _) match {
+              case (sum, (matrix_i, x_i)) => {
+                // Multiply an element of x by its corresponding matrix row, and add to the running
+                // sum vector.
+                BLAS.axpy(x_i, matrix_i, sum)
+                sum
+              }
+            },
+            combop = (sum1, sum2) => {
+              // Add the intermediate sum vectors.
+              BLAS.axpy(1.0, sum2, sum1)
+              sum1
             }
-          },
-          combop = (sum1, sum2) => {
-            // Add the intermediate sum vectors.
-            BLAS.axpy(1.0, sum2, sum1)
-            sum1
-          }
-        ))
-    }).treeAggregate(Vectors.zeros(n))(
+          ))
+    }).treeAggregate(Vectors.zeros(n).toDense)(
       seqOp = (sum1, sum2) => {
         // Add the intermediate sum vectors.
         BLAS.axpy(1.0, sum2, sum1)
@@ -107,5 +118,5 @@ class LinopMatrixAdjoint(@transient private val matrix: DMatrix)
     )
   }
 
-  override def a: LinearOperator[Vector, DVector] = new LinopMatrix(matrix)
+  override def t: LinearOperator[DenseVector, DVector] = new DenseVectorToDVectorLinOp(matrix)
 }

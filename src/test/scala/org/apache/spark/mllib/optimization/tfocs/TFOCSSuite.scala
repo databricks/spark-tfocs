@@ -56,12 +56,12 @@ class TFOCSSuite extends FunSuite with MLlibTestSparkContext {
       Vectors.dense(-0.2341, -0.5792, 0.3272, -0.7748, 0.6396, -0.7910, -0.6239, -0.6901, 0.0249,
         0.6624)), 2)
     val b = sc.parallelize(Array(0.1614, -0.1662, 0.4224, -0.2945, -0.3866), 2).glom.map(
-      Vectors.dense(_))
+      Vectors.dense(_).toDense)
     val lambda = 0.0298
-    val x0 = Vectors.zeros(10)
+    val x0 = Vectors.zeros(10).toDense
 
     val (x, lossHistory) = TFOCS.optimize(new SmoothQuad(b),
-      new LinopMatrix(A),
+      new DenseVectorToDVectorLinOp(A),
       new ProxL1(lambda),
       x0)
 

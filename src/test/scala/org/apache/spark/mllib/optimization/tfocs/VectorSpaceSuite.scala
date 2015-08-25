@@ -28,17 +28,17 @@ class VectorSpaceSuite extends FunSuite with MLlibTestSparkContext {
 
   test("SimpleVectorSpace.combine is implemented properly") {
     val alpha = 1.1
-    val a = Vectors.dense(2.0, 3.0)
+    val a = Vectors.dense(2.0, 3.0).toDense
     val beta = 4.0
-    val b = Vectors.dense(5.0, 6.0)
+    val b = Vectors.dense(5.0, 6.0).toDense
     val expectedCombination = Vectors.dense(1.1 * 2.0 + 4.0 * 5.0, 1.1 * 3.0 + 4.0 * 6.0)
     assert(SimpleVectorSpace.combine(alpha, a, beta, b) == expectedCombination,
       "SimpleVectorSpace.combine should return the correct result.")
   }
 
   test("SimpleVectorSpace.dot is implemented properly") {
-    val a = Vectors.dense(2.0, 3.0)
-    val b = Vectors.dense(5.0, 6.0)
+    val a = Vectors.dense(2.0, 3.0).toDense
+    val b = Vectors.dense(5.0, 6.0).toDense
     val expectedDot = 2.0 * 5.0 + 3.0 * 6.0
     assert(SimpleVectorSpace.dot(a, b) == expectedDot,
       "SimpleVectorSpace.dot should return the correct result.")
@@ -46,9 +46,9 @@ class VectorSpaceSuite extends FunSuite with MLlibTestSparkContext {
 
   test("DVectorVectorSpace.combine is implemented properly") {
     val alpha = 1.1
-    val a = sc.parallelize(Array(Vectors.dense(2.0, 3.0), Vectors.dense(4.0)), 2)
+    val a = sc.parallelize(Array(Vectors.dense(2.0, 3.0).toDense, Vectors.dense(4.0).toDense), 2)
     val beta = 4.0
-    val b = sc.parallelize(Array(Vectors.dense(5.0, 6.0), Vectors.dense(7.0)), 2)
+    val b = sc.parallelize(Array(Vectors.dense(5.0, 6.0).toDense, Vectors.dense(7.0).toDense), 2)
     val combination = DVectorVectorSpace.combine(alpha, a, beta, b)
     val expectedCombination =
       Vectors.dense(1.1 * 2.0 + 4.0 * 5.0, 1.1 * 3.0 + 4.0 * 6.0, 1.1 * 4.0 + 4.0 * 7.0)
@@ -57,8 +57,8 @@ class VectorSpaceSuite extends FunSuite with MLlibTestSparkContext {
   }
 
   test("DVectorVectorSpace.dot is implemented properly") {
-    val a = sc.parallelize(Array(Vectors.dense(2.0, 3.0), Vectors.dense(4.0)), 2)
-    val b = sc.parallelize(Array(Vectors.dense(5.0, 6.0), Vectors.dense(7.0)), 2)
+    val a = sc.parallelize(Array(Vectors.dense(2.0, 3.0).toDense, Vectors.dense(4.0).toDense), 2)
+    val b = sc.parallelize(Array(Vectors.dense(5.0, 6.0).toDense, Vectors.dense(7.0).toDense), 2)
     val expectedDot = 2.0 * 5.0 + 3.0 * 6.0 + 4.0 * 7.0
     assert(DVectorVectorSpace.dot(a, b) == expectedDot,
       "DVectorVectorSpace.dot should return the correct result.")
