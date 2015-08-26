@@ -15,22 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.spark.mllib.optimization.tfocs
+package org.apache.spark.mllib.optimization.tfocs.fs.vector.double
+
+import org.apache.spark.mllib.linalg.DenseVector
+import org.apache.spark.mllib.optimization.tfocs.{ ProxCapableFunction, ProxMode, ProxValue }
 
 /**
- * A trait for linear operators supporting application of an operator and of its adjoint.
+ * The proximity operator for constant zero.
  *
- * @tparam X Type representing an input vector.
- * @tparam Y Type representing an output vector.
+ * NOTE In matlab tfocs this functionality is implemented in prox_0.m.
+ * @see [[https://github.com/cvxr/TFOCS/blob/master/prox_0.m]]
  */
-trait LinearOperator[X, Y] {
-  /**
-   * Evaluates this operator at x.
-   */
-  def apply(x: X): Y
+class ProxZero extends ProxCapableFunction[DenseVector] {
 
-  /**
-   * The adjoint of this operator.
-   */
-  def t: LinearOperator[Y, X]
+  override def apply(z: DenseVector, t: Double, mode: ProxMode): ProxValue[DenseVector] =
+    ProxValue(Some(0.0), Some(z))
+
+  override def apply(x: DenseVector): Double = 0.0
 }

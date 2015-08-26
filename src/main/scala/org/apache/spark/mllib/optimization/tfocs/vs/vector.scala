@@ -15,22 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.spark.mllib.optimization.tfocs
+package org.apache.spark.mllib.optimization.tfocs.vs
 
-/**
- * A trait for linear operators supporting application of an operator and of its adjoint.
- *
- * @tparam X Type representing an input vector.
- * @tparam Y Type representing an output vector.
- */
-trait LinearOperator[X, Y] {
-  /**
-   * Evaluates this operator at x.
-   */
-  def apply(x: X): Y
+import org.apache.spark.mllib.linalg.{ BLAS, DenseVector }
+import org.apache.spark.mllib.optimization.tfocs.VectorSpace
 
-  /**
-   * The adjoint of this operator.
-   */
-  def t: LinearOperator[Y, X]
+package object vector {
+
+  /** A VectorSpace for DenseVectors in local memory. */
+  implicit object DenseVectorSpace extends VectorSpace[DenseVector] {
+
+    override def combine(alpha: Double,
+      a: DenseVector,
+      beta: Double,
+      b: DenseVector): DenseVector = {
+      val ret = a.copy
+      if (alpha != 1.0) BLAS.scal(alpha, ret)
+      BLAS.axpy(beta, b, ret)
+      ret
+    }
+
+    override def dot(a: DenseVector, b: DenseVector): Double = BLAS.dot(a, b)
+  }
+
 }

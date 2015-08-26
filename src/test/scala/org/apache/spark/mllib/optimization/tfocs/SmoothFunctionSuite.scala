@@ -22,6 +22,7 @@ import org.scalatest.FunSuite
 import org.apache.spark.SparkException
 import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
+import org.apache.spark.mllib.optimization.tfocs.fs.dvector.double._
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 import org.apache.spark.mllib.util.TestingUtils._
 

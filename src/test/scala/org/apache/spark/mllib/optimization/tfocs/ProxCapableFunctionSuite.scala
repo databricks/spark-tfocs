@@ -20,6 +20,7 @@ package org.apache.spark.mllib.optimization.tfocs
 import org.scalatest.FunSuite
 
 import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.optimization.tfocs.fs.vector.double._
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 import org.apache.spark.mllib.util.TestingUtils._
 

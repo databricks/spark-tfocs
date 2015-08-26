@@ -18,13 +18,13 @@
 package org.apache.spark.mllib.optimization.tfocs.examples
 
 import org.apache.spark.mllib.linalg.DenseVector
-import org.apache.spark.mllib.optimization.tfocs.{
-  DenseVectorToDVectorLinOp,
-  ProxL1,
-  SmoothQuad,
-  TFOCS
-}
+import org.apache.spark.mllib.optimization.tfocs.fs.dvector.double._
+import org.apache.spark.mllib.optimization.tfocs.fs.vector.double._
+import org.apache.spark.mllib.optimization.tfocs.fs.vector.dvector._
+import org.apache.spark.mllib.optimization.tfocs.TFOCS
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
+import org.apache.spark.mllib.optimization.tfocs.vs.dvector._
+import org.apache.spark.mllib.optimization.tfocs.vs.vector._
 
 /** Helper to solve lasso regression problems using the tfocs implementation. */
 object SolverL1RLS {
@@ -51,5 +51,5 @@ object SolverL1RLS {
    * @see [[https://github.com/cvxr/TFOCS/blob/master/solver_L1RLS.m]]
    */
   def run(A: DMatrix, b: DVector, lambda: Double, x0: DenseVector): DenseVector =
-    TFOCS.optimize(new SmoothQuad(b), new DenseVectorToDVectorLinOp(A), new ProxL1(lambda), x0)._1
+    TFOCS.optimize(new SmoothQuad(b), new LinopMatrix(A), new ProxL1(lambda), x0)._1
 }
