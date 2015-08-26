@@ -20,6 +20,11 @@ package org.apache.spark.mllib.optimization.tfocs
 import org.scalatest.FunSuite
 
 import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.optimization.tfocs.fs.dvector.double._
+import org.apache.spark.mllib.optimization.tfocs.fs.vector.double._
+import org.apache.spark.mllib.optimization.tfocs.fs.vector.dvector._
+import org.apache.spark.mllib.optimization.tfocs.vs.dvector._
+import org.apache.spark.mllib.optimization.tfocs.vs.vector._
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 import org.apache.spark.mllib.util.TestingUtils._
 
@@ -61,7 +66,7 @@ class TFOCSSuite extends FunSuite with MLlibTestSparkContext {
     val x0 = Vectors.zeros(10).toDense
 
     val (x, lossHistory) = TFOCS.optimize(new SmoothQuad(b),
-      new DenseVectorToDVectorLinOp(A),
+      new LinopMatrix(A),
       new ProxL1(lambda),
       x0)
 

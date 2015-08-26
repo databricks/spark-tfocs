@@ -18,9 +18,7 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 import org.apache.spark.mllib.linalg.{ DenseVector, Vector }
-import org.apache.spark.mllib.linalg.BLAS
 import org.apache.spark.rdd.RDD
-import org.apache.spark.storage.StorageLevel
 
 /**
  * A trait for a vector space supporting a few basic linear algebra operations.
@@ -60,42 +58,4 @@ object VectorSpace {
    * in its first partition and a single Vector containing three elements in its second partition.
    */
   type DMatrix = RDD[Vector]
-
-  /** A VectorSpace for DenseVectors in local memory. */
-  implicit object SimpleVectorSpace extends VectorSpace[DenseVector] {
-
-    override def combine(alpha: Double,
-      a: DenseVector,
-      beta: Double,
-      b: DenseVector): DenseVector = {
-      val ret = a.copy
-      if (alpha != 1.0) BLAS.scal(alpha, ret)
-      BLAS.axpy(beta, b, ret)
-      ret
-    }
-
-    override def dot(a: DenseVector, b: DenseVector): Double = BLAS.dot(a, b)
-  }
-
-  /** A VectorSpace for DVector vectors. */
-  implicit object DVectorVectorSpace extends VectorSpace[DVector] {
-
-    import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
-
-    override def combine(alpha: Double, a: DVector, beta: Double, b: DVector): DVector =
-      a.zip(b).map(_ match {
-        case (aPart, bPart) =>
-          // NOTE A DenseVector result is assumed here (not sparse safe).
-          SimpleVectorSpace.combine(alpha, aPart, beta, bPart).toDense
-      })
-
-    override def dot(a: DVector, b: DVector): Double =
-      a.zip(b).aggregate(0.0)((sum, x) => sum + BLAS.dot(x._1, x._2), _ + _)
-
-    override def cache(a: DVector): Unit =
-      if (a.getStorageLevel == StorageLevel.NONE) {
-        a.cache()
-      }
-  }
-
 }
