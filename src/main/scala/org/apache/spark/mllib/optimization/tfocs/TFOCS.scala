@@ -18,14 +18,13 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 import scala.collection.mutable.ArrayBuffer
-import scala.util.control.Breaks._
 
 import org.apache.spark.Logging
 
 object TFOCS extends Logging {
 
   /**
-   * Minimize an objective function using accelerated proximal gradient descent.
+   * Optimize an objective function using accelerated proximal gradient descent.
    * The implementation is based on TFOCS [[http://cvxr.com/tfocs]], described in Becker, Candes,
    * and Grant 2010. A limited but useful subset of the TFOCS feature set is implemented, including
    * support for composite loss functions, the Auslender and Teboulle acceleration method,
@@ -44,16 +43,28 @@ object TFOCS extends Logging {
    *        is above 1, the algorithm converges when the magnitude of the relative difference
    *        between successive 'x' vectors drops below convergenceTol. But if the magnitude of 'x'
    *        is 1 or below, the magnitude of the absolute difference between successive 'x' vectors
-   *        is used instead.
-   * @param rows The VectorSpace used for computation on row vectors.
+   *        is tested for convergence instead of the magnitude of the relative difference.
+   * @param rows The VectorSpace used for computation on row vectors. The 'x' vectors to be
+   *        optimized belong to this row VectorSpace.
    * @param cols The VectorSpace used for computation on column vectors.
+   * @tparam R Type representing a row vector.
+   * @tparam C Type representing a column vector.
    *
-   * @return A tuple containing two elements. The first element is an R vector containing the
-   *         minimizing values. The second element contains the objective function history.
+   * @return A tuple containing two elements. The first element is a row vector containing the
+   *         optimized 'x' values. The second element contains the objective function history.
+   *
+   * NOTE In matlab tfocs this functionality is implemented in tfocs.m, tfocs_initialize.m,
+   *      tfocs_AT.m, tfocs_backtrack.m, tfocs_iterate.m, and tfocs_cleanup.m.
+   * @see [[https://github.com/cvxr/TFOCS/blob/master/tfocs.m]]
+   * @see [[https://github.com/cvxr/TFOCS/blob/master/private/tfocs_initialize.m]]
+   * @see [[https://github.com/cvxr/TFOCS/blob/master/tfocs_AT.m]]
+   * @see [[https://github.com/cvxr/TFOCS/blob/master/private/tfocs_backtrack.m]]
+   * @see [[https://github.com/cvxr/TFOCS/blob/master/private/tfocs_iterate.m]]
+   * @see [[https://github.com/cvxr/TFOCS/blob/master/private/tfocs_cleanup.m]]
    */
-  def minimize[R, C](
+  def optimize[R, C](
     f: SmoothFunction[C],
-    A: LinearFunction[R, C],
+    A: LinearOperator[R, C],
     h: ProxCapableFunction[R],
     x0: R,
     numIterations: Int = 200,
@@ -80,9 +91,9 @@ object TFOCS extends Logging {
     var backtrack_simple = true
     val backtrack_tol = 1e-10
 
-    var cntr_Ay = 0
-    var cntr_Ax = 0
-    val cntr_reset = 50
+    var cntrAy = 0
+    var cntrAx = 0
+    val cntrReset = 50
 
     var hasConverged = false
     for (nIter <- 1 to numIterations if !hasConverged) {
@@ -108,11 +119,11 @@ object TFOCS extends Logging {
         theta = 2.0 / (1.0 + math.sqrt(1.0 + 4.0 * (L / L_old) / (theta_old * theta_old)))
 
         y = rows.combine(1.0 - theta, x_old, theta, z_old)
-        val a_y = if (cntr_Ay >= cntr_reset) {
-          cntr_Ay = 0
+        val a_y = if (cntrAy >= cntrReset) {
+          cntrAy = 0
           A(y)
         } else {
-          cntr_Ay = cntr_Ay + 1
+          cntrAy = cntrAy + 1
           cols.combine(1.0 - theta, a_x_old, theta, a_z_old)
         }
         if (!backtrack_simple) cols.cache(a_y)
@@ -124,23 +135,23 @@ object TFOCS extends Logging {
         g_y = A.t(g_Ay)
         rows.cache(g_y)
         val step = 1.0 / (theta * L)
-        z = h(rows.combine(1.0, z_old, -step, g_y), step, Mode(false, true)).g.get
+        z = h(rows.combine(1.0, z_old, -step, g_y), step, ProxMode(false, true)).minimizer.get
         rows.cache(z)
         a_z = A(z)
         cols.cache(a_z)
 
         x = rows.combine(1.0 - theta, x_old, theta, z)
         rows.cache(x)
-        a_x = if (cntr_Ax >= cntr_reset) {
-          cntr_Ax = 0
+        a_x = if (cntrAx >= cntrReset) {
+          cntrAx = 0
           A(x)
         } else {
-          cntr_Ax = cntr_Ax + 1
+          cntrAx = cntrAx + 1
           cols.combine(1.0 - theta, a_x_old, theta, a_z)
         }
         cols.cache(a_x)
 
-        // If a nondivergence criterion is violated, adjust the Lipschitz estimate and re-run the
+        // If a non divergence criterion is violated, adjust the Lipschitz estimate and re-run the
         // inner (backtracking) loop.
         isBacktracking = false
         if (beta < 1.0) {
@@ -153,12 +164,12 @@ object TFOCS extends Logging {
             // Compute localL using one of two non divergence criteria. The backtrack_simple
             // criterion is more accurate but prone to numerical instability.
             var localL = if (backtrack_simple) {
-              val Value(Some(f_x_), _) = f(a_x, Mode(true, false))
-              f_x = Some(f_x_)
+              f_x = Some(f(a_x))
               backtrack_simple =
-                (math.abs(f_y - f_x_) >= backtrack_tol * math.max(math.abs(f_x_), math.abs(f_y)))
+                (math.abs(f_y - f_x.get) >=
+                  backtrack_tol * math.max(math.abs(f_x.get), math.abs(f_y)))
               val q_x = f_y + rows.dot(xy, g_y) + 0.5 * L * xy_sq
-              L + 2.0 * math.max(f_x_ - q_x, 0.0) / xy_sq
+              L + 2.0 * math.max(f_x.get - q_x, 0.0) / xy_sq
             } else {
               val Value(_, Some(g_Ax)) = f(a_x, Mode(false, true))
               2.0 * cols.dot(cols.combine(1.0, a_x, -1.0, a_y),
@@ -184,8 +195,8 @@ object TFOCS extends Logging {
       // Track the loss history using the smooth function value at x (f_x) if available. Otherwise
       // use f_y. The prox capable function is included in this loss computation.
       lossHistory.append(f_x match {
-        case Some(f) => f + h(x, 0.0, Mode(true, false)).f.get
-        case _ => f_y + h(y, 0.0, Mode(true, false)).f.get
+        case Some(f) => f + h(x)
+        case _ => f_y + h(y)
       })
 
       // Restart acceleration if indicated by the gradient test from O'Donoghue and Candes 2013.
@@ -213,7 +224,7 @@ object TFOCS extends Logging {
       }
     }
 
-    logInfo("TFOCS.minimize finished. Last 10 losses %s".format(
+    logInfo("TFOCS.optimize finished. Last 10 losses %s".format(
       lossHistory.takeRight(10).mkString(", ")))
 
     (x, lossHistory.toArray)

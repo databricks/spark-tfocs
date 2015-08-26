@@ -17,18 +17,19 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-import org.scalatest.{ FunSuite, Matchers }
+import org.scalatest.FunSuite
 
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.util.MLlibTestSparkContext
+import org.apache.spark.mllib.util.TestingUtils._
 
-class TFOCSSuite extends FunSuite with MLlibTestSparkContext with Matchers {
+class TFOCSSuite extends FunSuite with MLlibTestSparkContext {
 
   test("The weights and losses returned by Spark TFOCS should match those returned by Matlab " +
     "TFOCS") {
 
     // The test below checks that the results match those of the following TFOCS matlab program
-    // (using TFOCS version 469466db9053f986b3f7e3e7d6b8ffe2f971f35b):
+    // (using TFOCS version 1945a771f315acd4cc6eba638b5c01fb52ee7aaa):
     //
     // A = [ -0.8307    0.2722    0.1947   -0.3545    0.3944   -0.5557   -0.2904    0.5337   -0.1190    0.0657;
     //        0.2209   -0.2547   -0.4508   -0.1773   -0.0596   -0.2363    0.1157   -0.2136    0.4888   -0.2178;
@@ -53,19 +54,20 @@ class TFOCSSuite extends FunSuite with MLlibTestSparkContext with Matchers {
       Vectors.dense(0.4056, -0.6623, 0.7984, 0.3474, 0.0084, -0.0191, 0.5596, -0.4359, 0.8581,
         0.0490),
       Vectors.dense(-0.2341, -0.5792, 0.3272, -0.7748, 0.6396, -0.7910, -0.6239, -0.6901, 0.0249,
-        0.6624)))
-    val b = sc.parallelize(Array(0.1614, -0.1662, 0.4224, -0.2945, -0.3866))
+        0.6624)), 2)
+    val b = sc.parallelize(Array(0.1614, -0.1662, 0.4224, -0.2945, -0.3866), 2).glom.map(
+      Vectors.dense(_).toDense)
     val lambda = 0.0298
-    val x0 = Vectors.zeros(10)
+    val x0 = Vectors.zeros(10).toDense
 
-    val (x, lossHistory) = TFOCS.minimize(new SquaredErrorRDDDouble(b),
-      new ProductVectorRDDDouble(A),
-      new L1ProxVector(lambda),
+    val (x, lossHistory) = TFOCS.optimize(new SmoothQuad(b),
+      new DenseVectorToDVectorLinOp(A),
+      new ProxL1(lambda),
       x0)
 
     val expectedX = Vectors.dense(-0.049755786974910, 0, 0.076369527414210, 0, 0, 0, 0,
       0.111550837996771, -0.314626347477663, -0.503782689620966)
-    val expectedLossHistory = Array(0.113425611210499, 0.077669187887145, 0.061961458212103,
+    val expectedLossHistory = Vectors.dense(0.113425611210499, 0.077669187887145, 0.061961458212103,
       0.052553214376800, 0.046562416223286, 0.042826602488959, 0.040906876606451, 0.040100239630275,
       0.039547309449369, 0.039102810446688, 0.038743759101449, 0.038473157445446, 0.038243690177961,
       0.037820176724358, 0.037674646255497, 0.037595407614782, 0.037541273717515, 0.037488658690212,
@@ -88,11 +90,10 @@ class TFOCSSuite extends FunSuite with MLlibTestSparkContext with Matchers {
       0.035448898164430, 0.035448898164428, 0.035448898164427, 0.035448898164426, 0.035448898164425,
       0.035448898164425, 0.035448898164425, 0.035448898164425, 0.035448898164425)
 
-    assert(x.toArray.zip(expectedX.toArray).map(xs => math.abs((xs._1 - xs._2) / xs._2)).max < 1e-6,
+    assert(x ~= expectedX relTol 1e-6,
       "Each weight vector element should match the expected value, within tolerance.")
 
-    assert(lossHistory.zip(expectedLossHistory).map(hs => math.abs((hs._1 - hs._2) / hs._2)).max
-      < 1e-12,
+    assert(Vectors.dense(lossHistory) ~= expectedLossHistory relTol 1e-12,
       "The loss value on each iteration should match the expected value, within tolerance.")
   }
 }

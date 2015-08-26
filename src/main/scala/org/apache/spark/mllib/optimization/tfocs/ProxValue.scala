@@ -18,8 +18,10 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 /**
- * Evaluation mode.
- * @param f Whether to compute the function value.
- * @param g Whether to compute the function gradient.
+ * Evaluation result for a prox capable function.
+ *
+ * @param f An optional function value.
+ * @param minimizer An optional prox function minimizer value.
+ * @tparam X Type representing a vector.
  */
-case class Mode(f: Boolean, g: Boolean)
+case class ProxValue[X](f: Option[Double], minimizer: Option[X])

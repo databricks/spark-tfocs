@@ -20,6 +20,6 @@ package org.apache.spark.mllib.optimization.tfocs
 /**
  * Evaluation mode.
  * @param f Whether to compute the function value.
- * @param g Whether to compute the function gradient.
+ * @param minimizer Whether to compute the prox function minimizer.
  */
-case class Mode(f: Boolean, g: Boolean)
+case class ProxMode(f: Boolean, minimizer: Boolean)

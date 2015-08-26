@@ -17,49 +17,50 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-import org.scalatest.{ FunSuite, Matchers }
+import org.scalatest.FunSuite
 
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.util.MLlibTestSparkContext
+import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
+import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 
-class VectorSpaceSuite extends FunSuite with MLlibTestSparkContext with Matchers {
+class VectorSpaceSuite extends FunSuite with MLlibTestSparkContext {
 
-  test("SimpleVectorSpace is implemented properly") {
-    assert(Vectors.dense(22.2, 27.3) ==
-      VectorSpace.SimpleVectorSpace.combine(1.1, Vectors.dense(2.0, 3.0),
-        4.0, Vectors.dense(5.0, 6.0)),
+  test("SimpleVectorSpace.combine is implemented properly") {
+    val alpha = 1.1
+    val a = Vectors.dense(2.0, 3.0).toDense
+    val beta = 4.0
+    val b = Vectors.dense(5.0, 6.0).toDense
+    val expectedCombination = Vectors.dense(1.1 * 2.0 + 4.0 * 5.0, 1.1 * 3.0 + 4.0 * 6.0)
+    assert(SimpleVectorSpace.combine(alpha, a, beta, b) == expectedCombination,
       "SimpleVectorSpace.combine should return the correct result.")
+  }
 
-    assert(28 ==
-      VectorSpace.SimpleVectorSpace.dot(Vectors.dense(2.0, 3.0), Vectors.dense(5.0, 6.0)),
+  test("SimpleVectorSpace.dot is implemented properly") {
+    val a = Vectors.dense(2.0, 3.0).toDense
+    val b = Vectors.dense(5.0, 6.0).toDense
+    val expectedDot = 2.0 * 5.0 + 3.0 * 6.0
+    assert(SimpleVectorSpace.dot(a, b) == expectedDot,
       "SimpleVectorSpace.dot should return the correct result.")
   }
 
-  test("RDDDoubleVectorSpace is implemented properly") {
-    assert(Array(22.2, 27.3).deep ==
-      VectorSpace.RDDDoubleVectorSpace.combine(1.1, sc.parallelize(Array(2.0, 3.0)),
-        4.0, sc.parallelize(Array(5.0, 6.0))).collect().deep,
-      "RDDDoubleVectorSpace.combine should return the correct result.")
-
-    assert(28 ==
-      VectorSpace.RDDDoubleVectorSpace.dot(sc.parallelize(Array(2.0, 3.0)),
-        sc.parallelize(Array(5.0, 6.0))),
-      "RDDDoubleVectorSpace.dot should return the correct result.")
+  test("DVectorVectorSpace.combine is implemented properly") {
+    val alpha = 1.1
+    val a = sc.parallelize(Array(Vectors.dense(2.0, 3.0).toDense, Vectors.dense(4.0).toDense), 2)
+    val beta = 4.0
+    val b = sc.parallelize(Array(Vectors.dense(5.0, 6.0).toDense, Vectors.dense(7.0).toDense), 2)
+    val combination = DVectorVectorSpace.combine(alpha, a, beta, b)
+    val expectedCombination =
+      Vectors.dense(1.1 * 2.0 + 4.0 * 5.0, 1.1 * 3.0 + 4.0 * 6.0, 1.1 * 4.0 + 4.0 * 7.0)
+    assert(Vectors.dense(combination.collectElements) == expectedCombination,
+      "DVectorVectorSpace.combine should return the correct result.")
   }
 
-  test("RDDVectorVectorSpace is implemented properly") {
-    assert(Array(22.2, 27.3, 32.4).deep ==
-      VectorSpace.RDDVectorVectorSpace.combine(1.1,
-        sc.parallelize(Array(Vectors.dense(2.0, 3.0), Vectors.dense(4.0)), 2),
-        4.0,
-        sc.parallelize(Array(Vectors.dense(5.0, 6.0), Vectors.dense(7.0)), 2))
-      .flatMap(_.toArray).collect().deep,
-      "RDDVectorVectorSpace.combine should return the correct result.")
-
-    assert(56 ==
-      VectorSpace.RDDVectorVectorSpace.dot(
-        sc.parallelize(Array(Vectors.dense(2.0, 3.0), Vectors.dense(4.0)), 2),
-        sc.parallelize(Array(Vectors.dense(5.0, 6.0), Vectors.dense(7.0)), 2)),
-      "RDDVectorVectorSpace.dot should return the correct result.")
+  test("DVectorVectorSpace.dot is implemented properly") {
+    val a = sc.parallelize(Array(Vectors.dense(2.0, 3.0).toDense, Vectors.dense(4.0).toDense), 2)
+    val b = sc.parallelize(Array(Vectors.dense(5.0, 6.0).toDense, Vectors.dense(7.0).toDense), 2)
+    val expectedDot = 2.0 * 5.0 + 3.0 * 6.0 + 4.0 * 7.0
+    assert(DVectorVectorSpace.dot(a, b) == expectedDot,
+      "DVectorVectorSpace.dot should return the correct result.")
   }
 }
