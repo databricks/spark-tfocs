@@ -22,6 +22,10 @@ import org.scalatest.{ BeforeAndAfterAll, Suite }
 import org.apache.spark.{ SparkConf, SparkContext }
 import org.apache.spark.sql.SQLContext
 
+/**
+ * Testing helper excerpted from the spark testing library.
+ * @see [[https://github.com/apache/spark/blob/master/mllib/src/test/scala/org/apache/spark/mllib/util/MLlibTestSparkContext.scala]]
+ */
 trait MLlibTestSparkContext extends BeforeAndAfterAll { self: Suite =>
   @transient var sc: SparkContext = _
   @transient var sqlContext: SQLContext = _
