@@ -18,6 +18,7 @@
 package org.apache.spark.mllib.optimization.tfocs.vs
 
 import org.apache.spark.mllib.linalg.BLAS
+import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.mllib.optimization.tfocs.vs.vector.DenseVectorSpace
@@ -27,8 +28,6 @@ package object dvector {
 
   /** A VectorSpace for DVector vectors. */
   implicit object DVectorSpace extends VectorSpace[DVector] {
-
-    import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 
     override def combine(alpha: Double, a: DVector, beta: Double, b: DVector): DVector =
       if (alpha == 1.0 && beta == 0.0) {
