@@ -20,18 +20,16 @@ package org.apache.spark.mllib.optimization.tfocs
 import org.scalatest.FunSuite
 
 import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.optimization.tfocs.fs.dvector.double._
-import org.apache.spark.mllib.optimization.tfocs.fs.vector.double._
-import org.apache.spark.mllib.optimization.tfocs.fs.vector.dvector._
-import org.apache.spark.mllib.optimization.tfocs.vs.dvector._
-import org.apache.spark.mllib.optimization.tfocs.vs.vector._
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 import org.apache.spark.mllib.util.TestingUtils._
 
-class TFOCSSuite extends FunSuite with MLlibTestSparkContext {
+class SolverL1RLSSuite extends FunSuite with MLlibTestSparkContext {
 
-  test("The weights and losses returned by Spark TFOCS should match those returned by Matlab " +
-    "tfocs") {
+  test("The weights and losses returned by SolverL1RLS should match those returned by Matlab " +
+    "tfocs's solver_L1RLS") {
+
+    // This test also serves to validate the implementation of TFOCS.optimize against the Matlab
+    // tfocs implementation.
 
     // The test below checks that the results match those of the following TFOCS matlab program
     // (using TFOCS version 1945a771f315acd4cc6eba638b5c01fb52ee7aaa):
@@ -65,10 +63,7 @@ class TFOCSSuite extends FunSuite with MLlibTestSparkContext {
     val lambda = 0.0298
     val x0 = Vectors.zeros(10).toDense
 
-    val (x, TFOCS.OptimizationData(lossHistory, _, _)) = TFOCS.optimize(new SmoothQuad(b),
-      new LinopMatrix(A),
-      new ProxL1(lambda),
-      x0)
+    val (x, lossHistory) = SolverL1RLS.run(A, b, lambda, x0)
 
     val expectedX = Vectors.dense(-0.049755786974910, 0, 0.076369527414210, 0, 0, 0, 0,
       0.111550837996771, -0.314626347477663, -0.503782689620966)

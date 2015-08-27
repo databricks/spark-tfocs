@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.spark.mllib.optimization.tfocs.examples
+package org.apache.spark.mllib.optimization.tfocs
 
 import org.apache.spark.mllib.linalg.DenseVector
 import org.apache.spark.mllib.optimization.tfocs.fs.dvector.double._
 import org.apache.spark.mllib.optimization.tfocs.fs.vector.double._
 import org.apache.spark.mllib.optimization.tfocs.fs.vector.dvector._
-import org.apache.spark.mllib.optimization.tfocs.TFOCS
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.mllib.optimization.tfocs.vs.dvector._
 import org.apache.spark.mllib.optimization.tfocs.vs.vector._
@@ -50,6 +49,9 @@ object SolverL1RLS {
    * NOTE In matlab tfocs this functionality is implemented in solver_L1RLS.m.
    * @see [[https://github.com/cvxr/TFOCS/blob/master/solver_L1RLS.m]]
    */
-  def run(A: DMatrix, b: DVector, lambda: Double, x0: DenseVector): DenseVector =
-    TFOCS.optimize(new SmoothQuad(b), new LinopMatrix(A), new ProxL1(lambda), x0)._1
+  def run(A: DMatrix, b: DVector, lambda: Double, x0: DenseVector): (DenseVector, Array[Double]) = {
+    val (x, TFOCS.OptimizationData(lossHistory, _, _)) =
+      TFOCS.optimize(new SmoothQuad(b), new LinopMatrix(A), new ProxL1(lambda), x0)
+    (x, lossHistory)
+  }
 }

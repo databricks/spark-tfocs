@@ -30,6 +30,9 @@ class SolverSLPSuite extends FunSuite with MLlibTestSparkContext {
   test("The values and losses returned by Spark SolverSLP should match those returned by Matlab " +
     "tfocs's solver_sLP") {
 
+    // This test also serves to validate the implementation of TFOCS_SCD.optimize against the Matlab
+    // tfocs implementation.
+
     // The test below checks that the results match those of the following TFOCS matlab program
     // (using TFOCS version 1945a771f315acd4cc6eba638b5c01fb52ee7aaa):
     //
