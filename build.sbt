@@ -15,6 +15,7 @@ licenses += "Apache-2.0" -> url("http://opensource.org/licenses/Apache-2.0")
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
 libraryDependencies ++= Seq(
+  "com.joptimizer" % "joptimizer" % "3.4.0",
   "org.scalatest" %% "scalatest" % "2.1.5" % Test
 )
 
