@@ -50,7 +50,7 @@ class SmoothQuad(x0: DVector) extends SmoothFunction[DVector] {
       // TODO If f is required but not g, then performance might be improved by reimplementing as
       // a single aggregate using 'x' and 'x0' without an intermediate 'g' DVector, which breaks
       // per-element pipelining.
-      Some(g.aggregate(0.0)((sum, y) => sum + math.pow(Vectors.norm(y, 2), 2), _ + _) / 2.0)
+      Some(g.aggregate(0.0)((sum, gPart) => sum + math.pow(Vectors.norm(gPart, 2), 2), _ + _) / 2.0)
     } else {
       None
     }

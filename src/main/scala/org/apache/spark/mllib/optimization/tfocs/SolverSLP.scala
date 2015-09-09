@@ -75,7 +75,7 @@ object SolverSLP {
 
     val minusB = b.copy
     BLAS.scal(-1.0, minusB)
-    val (x, hist) = TFOCS_SCD.optimize(new ProxShiftRPlus(c),
+    TFOCS_SCD.optimize(new ProxShiftRPlus(c),
       new LinopMatrix(A, minusB),
       new ProxZero(),
       mu,
@@ -85,7 +85,5 @@ object SolverSLP {
       tol,
       initialTol,
       dualTolCheckInterval)
-    (x, hist)
   }
-
 }
