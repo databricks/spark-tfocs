@@ -31,14 +31,20 @@ package object dvector {
     import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 
     override def combine(alpha: Double, a: DVector, beta: Double, b: DVector): DVector =
-      a.zip(b).map(_ match {
-        case (aPart, bPart) =>
-          // NOTE A DenseVector result is assumed here (not sparse safe).
-          DenseVectorSpace.combine(alpha, aPart, beta, bPart).toDense
-      })
+      if (alpha == 1.0 && beta == 0.0) {
+        // When minimizing rather than maximizing, the TFOCS implementation frequently requests a
+        // no-op linear combination where alpha == 1.0 and beta == 0.0. This case is specifically
+        // optimized.
+        a
+      } else {
+        a.zip(b).map(_ match {
+          case (aPart, bPart) =>
+            // NOTE A DenseVector result is assumed here (not sparse safe).
+            DenseVectorSpace.combine(alpha, aPart, beta, bPart).toDense
+        })
+      }
 
-    override def dot(a: DVector, b: DVector): Double =
-      a.zip(b).aggregate(0.0)((sum, x) => sum + BLAS.dot(x._1, x._2), _ + _)
+    override def dot(a: DVector, b: DVector): Double = a.dot(b)
 
     override def cache(a: DVector): Unit =
       if (a.getStorageLevel == StorageLevel.NONE) {

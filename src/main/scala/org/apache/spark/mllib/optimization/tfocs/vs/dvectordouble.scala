@@ -17,25 +17,27 @@
 
 package org.apache.spark.mllib.optimization.tfocs.vs
 
-import org.apache.spark.mllib.linalg.{ BLAS, DenseVector }
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace
+import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
+import org.apache.spark.mllib.optimization.tfocs.vs.dvector.DVectorSpace
 
-package object vector {
+package object dvectordouble {
 
-  /** A VectorSpace for DenseVectors in local memory. */
-  implicit object DenseVectorSpace extends VectorSpace[DenseVector] {
+  /*
+   * A VectorSpace for (DVector, Double) pairs. Such pairs arise when two separate functions are
+   * applied to an input value.
+   */
+  implicit object DVectorDoubleSpace extends VectorSpace[(DVector, Double)] {
 
     override def combine(alpha: Double,
-      a: DenseVector,
+      a: (DVector, Double),
       beta: Double,
-      b: DenseVector): DenseVector = {
-      val ret = a.copy
-      BLAS.scal(alpha, ret)
-      BLAS.axpy(beta, b, ret)
-      ret
-    }
+      b: (DVector, Double)): (DVector, Double) =
+      (DVectorSpace.combine(alpha, a._1, beta, b._1), alpha * a._2 + beta * b._2)
 
-    override def dot(a: DenseVector, b: DenseVector): Double = BLAS.dot(a, b)
+    override def dot(a: (DVector, Double), b: (DVector, Double)): Double =
+      DVectorSpace.dot(a._1, b._1) + a._2 * b._2
+
+    override def cache(a: (DVector, Double)): Unit = DVectorSpace.cache(a._1)
   }
-
 }

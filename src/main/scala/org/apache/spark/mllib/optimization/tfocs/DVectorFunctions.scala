@@ -69,11 +69,25 @@ private[tfocs] class DVectorFunctions(self: DVector) {
         ret
     })
 
+  def sqdist(other: DVector): Double =
+    self.zip(other).aggregate(0.0)((sum, x) => sum + Vectors.sqdist(x._1, x._2), _ + _)
+
   def sum: Double = self.aggregate(0.0)((sum, x) => sum + x.values.sum, _ + _)
+
+  def dot(other: DVector): Double =
+    self.zip(other).aggregate(0.0)((sum, x) => sum + BLAS.dot(x._1, x._2), _ + _)
 }
 
 private[tfocs] object DVectorFunctions {
 
   implicit def DVectorToDVectorFunctions(dVector: DVector): DVectorFunctions =
     new DVectorFunctions(dVector)
+
+  def axpy(a: Double, x: DVector, y: DVector) =
+    x.zip(y).map(_ match {
+      case (xPart, yPart) =>
+        val ret = yPart.copy
+        BLAS.axpy(a, xPart, ret)
+        ret
+    })
 }

@@ -17,8 +17,7 @@
 
 package org.apache.spark.mllib.optimization.tfocs.fs.vector.dvector
 
-import org.apache.spark.mllib.linalg.BLAS
-import org.apache.spark.mllib.linalg.DenseVector
+import org.apache.spark.mllib.linalg.{ BLAS, DenseVector }
 import org.apache.spark.mllib.optimization.tfocs.fs.dvector.vector.{ LinopMatrix => Adjoint }
 import org.apache.spark.mllib.optimization.tfocs.LinearOperator
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
