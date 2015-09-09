@@ -46,12 +46,15 @@ object TestLASSO {
 
     // Generate the design matrix using random normal values, then normalize the columns.
     val unnormalizedA = RandomRDDs.normalVectorRDD(sc, m, n, 0, rnd.nextLong)
-    val AColumnNormSq = unnormalizedA
-      .map(rowA => Vectors.dense(rowA.toArray.map(rowA_i => rowA_i * rowA_i)))
-      .reduce((a, b) => {
-        val ret = b.copy
-        BLAS.axpy(1.0, a, ret)
-        ret
+    val AColumnNormSq = unnormalizedA.treeAggregate(Vectors.zeros(n).toDense)(
+      seqOp = (sum, rowA) => {
+        val rowASq = Vectors.dense(rowA.toArray.map(rowA_i => rowA_i * rowA_i))
+        BLAS.axpy(1.0, rowASq, sum)
+        sum
+      },
+      combOp = (sum1, sum2) => {
+        BLAS.axpy(1.0, sum2, sum1)
+        sum1
       })
     val A = unnormalizedA.map(rowA =>
       Vectors.dense(rowA.toArray.zip(AColumnNormSq.toArray).map(_ match {
@@ -69,8 +72,9 @@ object TestLASSO {
     val snr = 30 // SNR in dB
     val sigma =
       math.pow(10, ((10 * math.log10(math.pow(Vectors.norm(bOriginal, 2), 2) / n) - snr) / 20))
-    val b = sc.parallelize(bOriginal.values.map(
-      _ + sigma * rnd.nextGaussian)).glom.map(Vectors.dense(_).toDense)
+    val b = sc.parallelize(bOriginal.values.map(_ + sigma * rnd.nextGaussian))
+      .glom
+      .map(Vectors.dense(_).toDense)
 
     // Set 'lambda' using the noise standard deviation.
     val lambda = 2 * sigma * math.sqrt(2 * math.log(n))
