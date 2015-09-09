@@ -24,6 +24,8 @@ import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.fs.dvector.double._
 import org.apache.spark.mllib.optimization.tfocs.fs.dvectordouble.double._
+import org.apache.spark.mllib.optimization.tfocs.fs.generic.double._
+import org.apache.spark.mllib.optimization.tfocs.vs.dvector._
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 import org.apache.spark.mllib.util.TestingUtils._
 
@@ -133,8 +135,9 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
     val ProxValue(Some(expectedProxF), Some(expectedProxMinimizer)) =
       objectiveF(expectedOffsetCenter, mu, ProxMode(true, true))
 
+    val diff = x0.diff(expectedProxMinimizer)
     val expectedF = ATz.dot(expectedProxMinimizer) - expectedProxF -
-      (0.5 / mu) * x0.sqdist(expectedProxMinimizer)
+      (0.5 / mu) * diff.dot(diff)
     assert(f == expectedF, "function value should be correct")
 
     val expectedG = expectedProxMinimizer.mapElements(g_i => -g_i)

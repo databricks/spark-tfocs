@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.spark.mllib.optimization.tfocs.fs.dvector.double
+package org.apache.spark.mllib.optimization.tfocs.fs.generic.double
 
-import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
-import org.apache.spark.mllib.optimization.tfocs.{ Mode, ProxCapableFunction, ProxMode, ProxValue, SmoothFunction, Value }
+import org.apache.spark.mllib.optimization.tfocs.{ Mode, ProxCapableFunction, ProxMode, ProxValue, SmoothFunction, Value, VectorSpace }
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.storage.StorageLevel
 
@@ -29,6 +28,7 @@ import org.apache.spark.storage.StorageLevel
  * @param objectiveF The prox capable function.
  * @param mu The smoothing parameter.
  * @param x0 The prox center.
+ * @tparam X Type representing a vector on which the function operates.
  *
  * TODO Make the implementation generic to support arbitrary vector spaces, using the VectorSpace
  * abstraction.
@@ -36,30 +36,29 @@ import org.apache.spark.storage.StorageLevel
  * NOTE In matlab tfocs this functionality is implemented in tfocs_SCD.m.
  * @see [[https://github.com/cvxr/TFOCS/blob/master/tfocs_SCD.m]]
  */
-class SmoothDual(objectiveF: ProxCapableFunction[DVector], mu: Double, x0: DVector)
-    extends SmoothFunction[DVector] with Serializable {
+class SmoothDual[X](objectiveF: ProxCapableFunction[X], mu: Double, x0: X)(
+    implicit vs: VectorSpace[X]) extends SmoothFunction[X] {
 
-  if (x0.getStorageLevel == StorageLevel.NONE) {
-    x0.cache()
-  }
+  vs.cache(x0)
 
-  override def apply(ATz: DVector, mode: Mode): Value[DVector] = {
+  override def apply(ATz: X, mode: Mode): Value[X] = {
 
-    val offsetCenter = axpy(mu, ATz, x0)
+    val offsetCenter = vs.combine(mu, ATz, 1.0, x0)
     val ProxValue(proxF, Some(proxMinimizer)) = objectiveF(offsetCenter, mu, ProxMode(mode.f, true))
 
     // Cache proxMinimizer when it will be required more than once.
-    if (mode.f) proxMinimizer.cache()
+    if (mode.f) vs.cache(proxMinimizer)
 
     val f = if (mode.f) {
       // TODO This might be optimized as a single spark job.
-      Some(ATz.dot(proxMinimizer) - proxF.get - (0.5 / mu) * x0.sqdist(proxMinimizer))
+      val diff = vs.combine(1.0, x0, -1.0, proxMinimizer)
+      Some(vs.dot(ATz, proxMinimizer) - proxF.get - (0.5 / mu) * vs.dot(diff, diff))
     } else {
       None
     }
 
     val g = if (mode.g) {
-      Some(proxMinimizer.mapElements(proxMinimizer_i => -proxMinimizer_i))
+      Some(vs.combine(-1.0, proxMinimizer, 0.0, proxMinimizer))
     } else {
       None
     }

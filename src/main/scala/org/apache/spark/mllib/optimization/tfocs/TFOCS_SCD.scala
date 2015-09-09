@@ -19,7 +19,7 @@ package org.apache.spark.mllib.optimization.tfocs
 
 import org.apache.spark.mllib.linalg.DenseVector
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
-import org.apache.spark.mllib.optimization.tfocs.fs.dvector.double._
+import org.apache.spark.mllib.optimization.tfocs.fs.generic.double._
 import org.apache.spark.mllib.optimization.tfocs.fs.dvectordouble.double._
 import org.apache.spark.mllib.optimization.tfocs.vs.vector._
 import org.apache.spark.mllib.optimization.tfocs.vs.dvectordouble._
