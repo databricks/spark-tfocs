@@ -19,7 +19,7 @@ package org.apache.spark.mllib.optimization.tfocs
 
 import org.scalatest.FunSuite
 
-import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 import org.apache.spark.mllib.util.TestingUtils._
 
@@ -59,7 +59,7 @@ class SolverL1RLSSuite extends FunSuite with MLlibTestSparkContext {
       Vectors.dense(-0.2341, -0.5792, 0.3272, -0.7748, 0.6396, -0.7910, -0.6239, -0.6901, 0.0249,
         0.6624)), 2)
     val b = sc.parallelize(Array(0.1614, -0.1662, 0.4224, -0.2945, -0.3866), 2).glom.map(
-      Vectors.dense(_).toDense)
+      new DenseVector(_))
     val lambda = 0.0298
     val x0 = Vectors.zeros(10).toDense
 

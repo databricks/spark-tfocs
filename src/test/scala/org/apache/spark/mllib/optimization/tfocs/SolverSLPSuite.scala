@@ -20,7 +20,7 @@ package org.apache.spark.mllib.optimization.tfocs
 import org.scalatest.FunSuite
 import scala.io.Source
 
-import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 import org.apache.spark.mllib.util.TestingUtils._
@@ -56,14 +56,14 @@ class SolverSLPSuite extends FunSuite with MLlibTestSparkContext {
       Vectors.sparse(5, Seq((2, 0.179885783103202))), Vectors.zeros(5), Vectors.zeros(5),
       Vectors.zeros(5), Vectors.zeros(5), Vectors.sparse(5, Seq((1, 0.014792694748719))),
       Vectors.zeros(5), Vectors.sparse(5, Seq((3, 0.244326895623829)))), 2)
-    var b = Vectors.dense(0, 7.127414296861894, 1.781441255102280, 2.497425876822379,
-      2.186136752456199).toDense
+    var b = new DenseVector(Array(0, 7.127414296861894, 1.781441255102280, 2.497425876822379,
+      2.186136752456199))
     val c = sc.parallelize(Array(-1.078275146772097, -0.368208440839284, 0.680376092886272,
       0.256371934668609, 1.691983132986665, 0.059837119884475, -0.221648385883038,
       -0.298134575377277, -1.913199010346937, 0.745084172661387), 2).glom.map(
-      Vectors.dense(_).toDense)
+      new DenseVector(_))
     val mu = 0.01
-    val x0 = sc.parallelize(Array.fill(10)(0.0), 2).glom.map(Vectors.dense(_).toDense)
+    val x0 = sc.parallelize(Array.fill(10)(0.0), 2).glom.map(new DenseVector(_))
     val z0 = Vectors.zeros(5).toDense
     val dualTolCheckInterval = 1 // Matlab tfocs checks for convergence on every iteration.
 

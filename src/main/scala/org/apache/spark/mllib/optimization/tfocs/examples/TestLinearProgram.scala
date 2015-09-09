@@ -19,7 +19,7 @@ package org.apache.spark.mllib.optimization.tfocs.examples
 
 import scala.util.Random
 
-import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.SolverSLP
 import org.apache.spark.mllib.optimization.tfocs.fs.dvector.vector.LinopMatrix
@@ -64,7 +64,7 @@ object TestLinearProgram {
     val m = n / 2 // Transpose constrint matrix column count.
 
     // Generate a starting 'x' vector, using normally generated values.
-    val x = RandomRDDs.normalRDD(sc, n).map(_ + 10).glom.map(Vectors.dense(_).toDense)
+    val x = RandomRDDs.normalRDD(sc, n).map(_ + 10).glom.map(new DenseVector(_))
 
     // Generate the transpose constraint matrix 'A' using sparse normally generated values.
     val A = new RandomVectorRDD(sc,
@@ -75,13 +75,13 @@ object TestLinearProgram {
       rnd.nextLong)
 
     // Generate the cost vector 'c' using normally generated values.
-    val c = RandomRDDs.normalRDD(sc, n, 0, rnd.nextLong).glom.map(Vectors.dense(_).toDense)
+    val c = RandomRDDs.normalRDD(sc, n, 0, rnd.nextLong).glom.map(new DenseVector(_))
 
     // Compute 'b' using the starting 'x' vector.
     val b = new LinopMatrix(A)(x)
 
     val mu = 1e-2
-    val x0 = sc.parallelize(new Array[Double](n)).glom.map(Vectors.dense(_).toDense)
+    val x0 = sc.parallelize(new Array[Double](n)).glom.map(new DenseVector(_))
     val z0 = Vectors.zeros(m).toDense
 
     // Solve the linear program using SolverSLP, finding the optimal x vector 'optimalX'.

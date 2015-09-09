@@ -33,8 +33,9 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
 
   test("The SmoothQuad implementation should return the expected value and gradient") {
 
-    val x0 = sc.parallelize(Array(Vectors.dense(1.0, 2.0).toDense, Vectors.dense(3.0).toDense), 2)
-    val x = sc.parallelize(Array(Vectors.dense(10.0, 20.0).toDense, Vectors.dense(30.0).toDense), 2)
+    val x0 = sc.parallelize(Array(new DenseVector(Array(1.0, 2.0)), new DenseVector(Array(3.0))), 2)
+    val x = sc.parallelize(Array(new DenseVector(Array(10.0, 20.0)), new DenseVector(Array(30.0))),
+      2)
     val fun = new SmoothQuad(x0)
 
     val Value(Some(f), Some(g)) = fun(x, Mode(true, true))
@@ -50,8 +51,9 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
   test("The SmoothQuad implementation checks for mismatched partition vectors") {
 
     // x0 and x do not have the same number of vector values in each partition.
-    val x0 = sc.parallelize(Array(Vectors.dense(1.0).toDense, Vectors.dense(2.0, 3.0).toDense), 2)
-    val x = sc.parallelize(Array(Vectors.dense(10.0, 20.0).toDense, Vectors.dense(30.0).toDense), 2)
+    val x0 = sc.parallelize(Array(new DenseVector(Array(1.0)), new DenseVector(Array(2.0, 3.0))), 2)
+    val x = sc.parallelize(Array(new DenseVector(Array(10.0, 20.0)), new DenseVector(Array(30.0))),
+      2)
     val fun = new SmoothQuad(x0)
 
     intercept[SparkException] {
@@ -61,10 +63,10 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
 
   test("The SmoothHuber implementation should return the expected value and gradient") {
 
-    val x0 = sc.parallelize(Array(Vectors.dense(1.0, 2.0).toDense,
-      Vectors.dense(-3.0, -4.0).toDense), 2)
-    val x = sc.parallelize(Array(Vectors.dense(1.1, 1.8).toDense,
-      Vectors.dense(-3.3, -3.6).toDense), 2)
+    val x0 = sc.parallelize(Array(new DenseVector(Array(1.0, 2.0)),
+      new DenseVector(Array(-3.0, -4.0))), 2)
+    val x = sc.parallelize(Array(new DenseVector(Array(1.1, 1.8)),
+      new DenseVector(Array(-3.3, -3.6))), 2)
 
     val fun1 = new SmoothHuber(x0, 0.2)
     val Value(Some(f1), Some(g1)) = fun1(x, Mode(true, true))
@@ -90,10 +92,10 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
 
   test("The SmoothLogLLogistic implementation should return the expected value and gradient") {
 
-    val y = sc.parallelize(Array(Vectors.dense(1.0, 0.0).toDense,
-      Vectors.dense(0.0, 1.0, 1.0).toDense), 2)
-    val mu = sc.parallelize(Array(Vectors.dense(0.1, -0.2).toDense,
-      Vectors.dense(0.3, -0.4, 0.0).toDense), 2)
+    val y = sc.parallelize(Array(new DenseVector(Array(1.0, 0.0)),
+      new DenseVector(Array(0.0, 1.0, 1.0))), 2)
+    val mu = sc.parallelize(Array(new DenseVector(Array(0.1, -0.2)),
+      new DenseVector(Array(0.3, -0.4, 0.0))), 2)
     val fun = new SmoothLogLLogistic(y)
 
     val Value(Some(f), Some(g)) = fun(mu, Mode(true, true))
@@ -115,23 +117,23 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
 
   test("The SmoothDual implementation should return the expected value and gradient") {
 
-    val c = sc.parallelize(Array(Vectors.dense(1.0, -2.2).toDense,
-      Vectors.dense(3.4, -4.6, 5.8).toDense), 2)
+    val c = sc.parallelize(Array(new DenseVector(Array(1.0, -2.2)),
+      new DenseVector(Array(3.4, -4.6, 5.8))), 2)
     val objectiveF = new ProxShiftRPlus(c)
     val mu = 0.2
-    val x0 = sc.parallelize(Array(Vectors.dense(2.0, -1.2).toDense,
-      Vectors.dense(0.4, -1.6, 2.8).toDense), 2)
-    val ATz = sc.parallelize(Array(Vectors.dense(12.0, -11.2).toDense,
-      Vectors.dense(10.4, -11.6, 12.8).toDense), 2)
+    val x0 = sc.parallelize(Array(new DenseVector(Array(2.0, -1.2)),
+      new DenseVector(Array(0.4, -1.6, 2.8))), 2)
+    val ATz = sc.parallelize(Array(new DenseVector(Array(12.0, -11.2)),
+      new DenseVector(Array(10.4, -11.6, 12.8))), 2)
     val fun = new SmoothDual(objectiveF, mu, x0)
 
     val Value(Some(f), Some(g)) = fun(ATz, Mode(true, true))
 
-    val expectedOffsetCenter = sc.parallelize(Array(Vectors.dense(mu * 12.0 + 2.0,
-      mu * -11.2 + -1.2).toDense,
-      Vectors.dense(mu * 10.4 + 0.4,
+    val expectedOffsetCenter = sc.parallelize(Array(new DenseVector(Array(mu * 12.0 + 2.0,
+      mu * -11.2 + -1.2)),
+      new DenseVector(Array(mu * 10.4 + 0.4,
         mu * -11.6 + -1.6,
-        mu * 12.8 + 2.8).toDense), 2)
+        mu * 12.8 + 2.8))), 2)
     val ProxValue(Some(expectedProxF), Some(expectedProxMinimizer)) =
       objectiveF(expectedOffsetCenter, mu, ProxMode(true, true))
 
@@ -147,11 +149,11 @@ class SmoothFunctionSuite extends FunSuite with MLlibTestSparkContext {
 
   test("The SmoothCombine implementation should return the expected value and gradient") {
 
-    val x0 = sc.parallelize(Array(Vectors.dense(2.0, -1.2).toDense,
-      Vectors.dense(0.4, -1.6, 2.8).toDense), 2)
+    val x0 = sc.parallelize(Array(new DenseVector(Array(2.0, -1.2)),
+      new DenseVector(Array(0.4, -1.6, 2.8))), 2)
     val objectiveF = new SmoothQuad(x0)
-    val x = (sc.parallelize(Array(Vectors.dense(9.0, 10.1).toDense,
-      Vectors.dense(11.2, 12.3, 13.4).toDense), 2),
+    val x = (sc.parallelize(Array(new DenseVector(Array(9.0, 10.1)),
+      new DenseVector(Array(11.2, 12.3, 13.4))), 2),
       88.1)
     val fun = new SmoothCombine(objectiveF)
 
