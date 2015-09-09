@@ -17,8 +17,9 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-import org.scalatest.FunSuite
 import scala.io.Source
+
+import org.scalatest.FunSuite
 
 import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
