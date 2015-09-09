@@ -37,8 +37,6 @@ trait SmoothFunction[X] {
    */
   def apply(x: X, mode: Mode): Value[X]
 
-  /**
-   * Evaluates the function on vector x.
-   */
+  /** Evaluates the function on vector x. */
   def apply(x: X): Double = apply(x, Mode(f = true, g = false)).f.get
 }

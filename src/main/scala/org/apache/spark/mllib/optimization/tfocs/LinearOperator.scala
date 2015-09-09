@@ -24,13 +24,10 @@ package org.apache.spark.mllib.optimization.tfocs
  * @tparam Y Type representing an output vector.
  */
 trait LinearOperator[X, Y] {
-  /**
-   * Evaluates this operator at x.
-   */
+
+  /** Evaluates this operator at x. */
   def apply(x: X): Y
 
-  /**
-   * The adjoint of this operator.
-   */
+  /** The adjoint of this operator. */
   def t: LinearOperator[Y, X]
 }
