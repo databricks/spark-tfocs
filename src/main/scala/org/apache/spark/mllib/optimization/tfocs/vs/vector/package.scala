@@ -37,5 +37,4 @@ package object vector {
 
     override def dot(a: DenseVector, b: DenseVector): Double = BLAS.dot(a, b)
   }
-
 }
