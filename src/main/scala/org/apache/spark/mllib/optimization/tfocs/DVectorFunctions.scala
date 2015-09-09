@@ -30,7 +30,7 @@ private[tfocs] class DVectorFunctions(self: DVector) {
   def mapElements(f: Double => Double): DVector = self.map(x => new DenseVector(x.values.map(f)))
 
   def zipElements(other: DVector, f: (Double, Double) => Double): DVector =
-    self.zip(other).map(_ match {
+    self.zip(other).map {
       case (selfPart, otherPart) =>
         if (selfPart.size != otherPart.size) {
           throw new IllegalArgumentException("Can only zipElements DVectors with the same number " +
@@ -44,7 +44,7 @@ private[tfocs] class DVectorFunctions(self: DVector) {
           i += 1
         }
         new DenseVector(ret)
-    })
+    }
 
   def aggregateElements(zeroValue: Double)(
     seqOp: (Double, Double) => Double,
@@ -62,12 +62,12 @@ private[tfocs] class DVectorFunctions(self: DVector) {
     self.collect().flatMap(_.values)
 
   def diff(other: DVector): DVector =
-    self.zip(other).map(_ match {
+    self.zip(other).map {
       case (selfPart, otherPart) =>
         val ret = selfPart.copy
         BLAS.axpy(-1.0, otherPart, ret)
         ret
-    })
+    }
 
   def sum: Double = self.aggregate(0.0)((sum, x) => sum + x.values.sum, _ + _)
 

@@ -57,9 +57,9 @@ object TestLASSO {
         sum1
       })
     val A = unnormalizedA.map(rowA =>
-      Vectors.dense(rowA.toArray.zip(AColumnNormSq.toArray).map(_ match {
+      Vectors.dense(rowA.toArray.zip(AColumnNormSq.toArray).map {
         case (rowA_i, normsq_i) => rowA_i / math.sqrt(normsq_i)
-      })))
+      }))
 
     // Generate the actual 'x' vector, including 'k' nonzero values.
     val x = Vectors.zeros(n).toDense

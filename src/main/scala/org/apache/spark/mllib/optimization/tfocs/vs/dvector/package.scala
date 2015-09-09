@@ -36,11 +36,11 @@ package object dvector {
         // optimized.
         a
       } else {
-        a.zip(b).map(_ match {
+        a.zip(b).map {
           case (aPart, bPart) =>
             // NOTE A DenseVector result is assumed here (not sparse safe).
             DenseVectorSpace.combine(alpha, aPart, beta, bPart).toDense
-        })
+        }
       }
 
     override def dot(a: DVector, b: DVector): Double = a.dot(b)
