@@ -31,7 +31,8 @@ import org.apache.spark.{ SparkConf, SparkContext }
  * This example reads a linear program in MPS format and solves it using SolverSLP.
  *
  * The example can be executed as follows:
- * sbt 'test:run-main org.apache.spark.mllib.optimization.tfocs.examples.TestLinearProgram <mps file>'
+ * sbt 'test:run-main
+ *   org.apache.spark.mllib.optimization.tfocs.examples.TestLinearProgram <mps file>'
  */
 object TestMPSLinearProgram {
   def main(args: Array[String]) {

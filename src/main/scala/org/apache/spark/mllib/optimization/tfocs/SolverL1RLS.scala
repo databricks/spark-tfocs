@@ -40,7 +40,7 @@ object SolverL1RLS {
    *
    * @return The optimized weights returned by the solver.
    *
-   * @see [[https://github.com/databricks/spark-tfocs/blob/master/src/main/scala/org/apache/spark/mllib/optimization/tfocs/examples/TestLASSO.scala]]
+   * @see [[org.apache.spark.mllib.optimization.tfocs.examples.TestLASSO]]
    * for example usage of this function.
    *
    * NOTE The distributed matrix 'A', represented as a DMatrix, and the distributed vector 'b',
