@@ -49,6 +49,10 @@ object SolverSLP {
    *
    * @return A tuple comprising the solution x vector and the loss history of the optimization run.
    *
+   * @see [[org.apache.spark.mllib.optimization.tfocs.examples.TestLinearProgram]]
+   * @see [[org.apache.spark.mllib.optimization.tfocs.examples.TestMPSLinearProgram]]
+   * for example usage of this function.
+   *
    * NOTE The distributed matrix, represented as a DMatrix, and the distributed vectors, represented
    * as DVectors, supplied to this function must be consistently partitioned. The DVectors must
    * all contain the same number of numeric values in each partition. And the DMatrix must contain

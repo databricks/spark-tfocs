@@ -40,6 +40,9 @@ object SolverL1RLS {
    *
    * @return The optimized weights returned by the solver.
    *
+   * @see [[org.apache.spark.mllib.optimization.tfocs.examples.TestLASSO]]
+   * for example usage of this function.
+   *
    * NOTE The distributed matrix 'A', represented as a DMatrix, and the distributed vector 'b',
    * represented as a DVector, supplied to this function must be consistently partitioned. The 'A'
    * matrix must contain the same number of rows in each partition as the 'b' vector has numeric
