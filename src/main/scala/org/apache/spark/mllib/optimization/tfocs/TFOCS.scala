@@ -61,11 +61,11 @@ object TFOCS extends Logging {
    *          algorithm converges when the magnitude of the relative difference between successive
    *          dual vectors drops below convergenceTol.
    * @param L0 The initial Lipschitz estimate. This initial value will be adjusted via backtracking
-   *        line search. The default L0 value generally provides satisfactory performance.
+   *        line search. The default L0 value usually provides satisfactory performance.
    * @param isDual Setting this to true indicates that a dual problem is being optimized and the
-   *        following actions are taken:
+   *        implementation should be changed as follows:
    *        - Negate the objective function to perform concave maximization.
-   *        - Record the dual values, returning the optimal dual value with OptimizationData.
+   *        - Record the dual values, returning the optimal dual with OptimizationData.
    *        - Check convergence using the dual rather than primal values.
    * @param dualTolCheckInterval The iteration interval between convergence tests when optimizing
    *        a dual (isDual == true). Used to throttle potentially slow convergence tests.
@@ -101,47 +101,95 @@ object TFOCS extends Logging {
       implicit rows: VectorSpace[R],
       cols: VectorSpace[C]): (R, OptimizationData[C]) = {
 
+    // Objective function multiplier: 1 if minimizing, -1 if maximizing.
     val maxmin = if (isDual) -1 else 1
 
+    // Known Lipschitz bound (set to unbounded).
     val Lexact = Double.PositiveInfinity
+
+    // Backtracking parameter.
     val beta = 0.5
+
+    // Line search increase parameter.
     val alpha = 0.9
 
+    // Accelerated descent current 'x' value.
     var x = x0
+
+    // Accelerated descent current 'z' value.
     var z = x
     rows.cache(x)
+
+    // Current computed A * x value.
     var a_x = A(x)
+
+    // Current computed A * z value.
     var a_z = a_x
     cols.cache(a_x)
+
+    // Current dual vector value.
     var dual: Option[C] = None
+
+    // Acceleration parameter.
     var theta = Double.PositiveInfinity
+
+    // Loss function history.
     val lossHistory = new ArrayBuffer[Double](numIterations)
 
+    // Current Lipschitz estimate.
     var L = L0
 
-    var backtrack_simple = true
-    val backtrack_tol = 1e-10
+    // Backtracking computation mode, the method of computing nondivergence criteria.
+    var backtrackSimple = true
 
+    // Backtracking computation tolerance.
+    val backtrackTol = 1e-10
+
+    // Counter for recomputing A * y from y instead of intermediate values.
     var cntrAy = 0
+
+    // Counter for recomputing A * x from x instead of intermediate values.
     var cntrAx = 0
+
+    // Reset interval for recomputing a_x and a_y. Values are recomputed periodically to clear
+    // accumulated errors.
     val cntrReset = 50
 
+    // Counter for throttling dual convergence tolerance check.
     var cntrTol = 0
 
     var hasConverged = false
     for (nIter <- 1 to numIterations if !hasConverged) {
 
+      // Previous iteration x and z values.
       val (x_old, z_old) = (x, z)
+
+      // Previous iteration A * x and A * z values.
       val (a_x_old, a_z_old) = (a_x, a_z)
+
+      // Previous iteration dual value.
       val oldDual = dual
+
+      // Previous iteration L value.
       val L_old = L
-      L = L * alpha
+
+      // Previous iteration theta value.
       val theta_old = theta
 
+      // Accelerated descent current 'y' value.
       var y = x0
+
+      // Value of f(x).
       var f_x: Option[Double] = None
+
+      // Value of f(y).
       var f_y = 0.0
+
+      // Gradient of f(y).
       var g_y = x0
+
+      // Increase the Lipschitz estimate using the line search increase parameter.
+      L = L * alpha
 
       var isBacktracking = true
       while (isBacktracking) {
@@ -150,8 +198,10 @@ object TFOCS extends Logging {
 
         // Auslender and Teboulle's accelerated method.
 
+        // Update theta for this iteration.
         theta = 2.0 / (1.0 + math.sqrt(1.0 + 4.0 * (L / L_old) / (theta_old * theta_old)))
 
+        // Compute 'y' using the acceleration parameter, and update A * y.
         y = rows.combine(1.0 - theta, x_old, theta, z_old)
         val a_y = if (cntrAy >= cntrReset) {
           cntrAy = 0
@@ -160,22 +210,27 @@ object TFOCS extends Logging {
           cntrAy = cntrAy + 1
           cols.combine(1.0 - theta, a_x_old, theta, a_z_old)
         }
-        if (!backtrack_simple) cols.cache(a_y)
+        if (!backtrackSimple) cols.cache(a_y)
 
+        // Compute f(A * y) and its gradient with respect to A * y.
         val Value(Some(f_y_), Some(g_Ay_)) = f(a_y, Mode(true, true))
-
         f_y = f_y_
         val g_Ay = cols.combine(maxmin, g_Ay_, 0.0, g_Ay_)
         dual = Some(g_Ay)
-        if (!backtrack_simple) cols.cache(g_Ay)
+        if (!backtrackSimple) cols.cache(g_Ay)
+
+        // Compute the gradient of f(A * y) with respect to 'y'.
         g_y = A.t(g_Ay)
         rows.cache(g_y)
+
+        // Step along the gradient, find the prox minimizer 'z', and update A * z.
         val step = 1.0 / (theta * L)
         z = h(rows.combine(1.0, z_old, -step, g_y), step, ProxMode(false, true)).minimizer.get
         rows.cache(z)
         a_z = A(z)
         cols.cache(a_z)
 
+        // Compute 'x' using the acceleration parameter, and update A * x.
         x = rows.combine(1.0 - theta, x_old, theta, z)
         rows.cache(x)
         a_x = if (cntrAx >= cntrReset) {
@@ -197,13 +252,13 @@ object TFOCS extends Logging {
           val xy_sq = rows.dot(xy, xy)
           if (xy_sq != 0.0) {
 
-            // Compute localL using one of two non divergence criteria. The backtrack_simple
-            // criterion is more accurate but prone to numerical instability.
-            var localL = if (backtrack_simple) {
+            // Compute localL using one of two non divergence criteria. The backtrackSimple
+            // criterion is a more accurate divergence check but is prone to numerical instability.
+            var localL = if (backtrackSimple) {
               f_x = Some(f(a_x))
-              backtrack_simple =
+              backtrackSimple =
                 (math.abs(f_y - f_x.get) >=
-                  backtrack_tol * math.max(math.abs(f_x.get), math.abs(f_y)))
+                  backtrackTol * math.max(math.abs(f_x.get), math.abs(f_y)))
               val q_x = f_y + rows.dot(xy, g_y) + 0.5 * L * xy_sq
               L + 2.0 * math.max(f_x.get - q_x, 0.0) / xy_sq
             } else {
@@ -221,7 +276,7 @@ object TFOCS extends Logging {
               isBacktracking = true
               if (!localL.isInfinity) {
                 L = math.min(Lexact, localL)
-              } else if (localL.isInfinity) {
+              } else {
                 localL = L
               }
               L = math.min(Lexact, math.max(localL, L / beta))
@@ -238,12 +293,13 @@ object TFOCS extends Logging {
       })
 
       // Restart acceleration if indicated by the gradient test from O'Donoghue and Candes 2013.
-      // NOTE TFOCS uses <g_Ay, a_x - a_x_old> here, but we do it this way to avoid a spark job.
+      // NOTE TFOCS uses <g_Ay, a_x - a_x_old> here, but we do it this way to avoid a spark job
+      // in the common case where row vectors are local and column vectors are distributed.
       if (rows.dot(g_y, rows.combine(1.0, x, -1.0, x_old)) > 0.0) {
         z = x
         a_z = a_x
         theta = Double.PositiveInfinity
-        backtrack_simple = true
+        backtrackSimple = true
       }
 
       // Check for convergence.
@@ -260,8 +316,8 @@ object TFOCS extends Logging {
       } else {
 
         // Check convergence tolerance on the dual vector. Because this check requires multiple
-        // spark jobs when the dual is a distributed vector, it is only performed once every
-        // dualTolCheckInterval iterations.
+        // spark jobs in the common case when the dual is a distributed vector, it is only performed
+        // once every dualTolCheckInterval iterations.
         if (cntrTol + 1 >= dualTolCheckInterval) {
           cntrTol = 0
 
@@ -277,8 +333,8 @@ object TFOCS extends Logging {
             }
           }
           d_dual < convergenceTol && nIter > 2
-        } else {
 
+        } else {
           cntrTol = cntrTol + 1
           false
         }

@@ -20,7 +20,7 @@ package org.apache.spark.mllib.optimization.tfocs.fs.dvector.vector
 import org.apache.spark.mllib.linalg.BLAS
 import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.CheckedIteratorFunctions._
-import org.apache.spark.mllib.optimization.tfocs.fs.vector.dvector.{ LinopMatrix => Adjoint }
+import org.apache.spark.mllib.optimization.tfocs.fs.vector.dvector.LinopMatrix
 import org.apache.spark.mllib.optimization.tfocs.LinearOperator
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.storage.StorageLevel
@@ -34,8 +34,8 @@ import org.apache.spark.storage.StorageLevel
  * NOTE In matlab tfocs this functionality is implemented in linop_matrix.m.
  * @see [[https://github.com/cvxr/TFOCS/blob/master/linop_matrix.m]]
  */
-class LinopMatrix(@transient private val matrix: DMatrix)
-    extends LinearOperator[DVector, DenseVector] with java.io.Serializable {
+class LinopMatrixAdjoint(@transient private val matrix: DMatrix)
+    extends LinearOperator[DVector, DenseVector] {
 
   if (matrix.getStorageLevel == StorageLevel.NONE) {
     matrix.cache()
@@ -44,15 +44,16 @@ class LinopMatrix(@transient private val matrix: DMatrix)
   private lazy val n = matrix.first().size
 
   override def apply(x: DVector): DenseVector = {
-    matrix.zipPartitions(x)({ (matrixPartition, xPartition) =>
+    val n = this.n
+    matrix.zipPartitions(x)((matrixPartition, xPartition) =>
       Iterator.single(
         matrixPartition.checkedZip(xPartition.next.values.toIterator).aggregate(
           // NOTE A DenseVector result is assumed here (not sparse safe).
           Vectors.zeros(n).toDense)(
             seqop = (_, _) match {
               case (sum, (matrix_i, x_i)) => {
-                // Multiply an element of x by its corresponding matrix row, and add to the running
-                // sum vector.
+                // Multiply an element of x by its corresponding matrix row, and add to the
+                // accumulation sum vector.
                 BLAS.axpy(x_i, matrix_i, sum)
                 sum
               }
@@ -63,7 +64,7 @@ class LinopMatrix(@transient private val matrix: DMatrix)
               sum1
             }
           ))
-    }).treeAggregate(Vectors.zeros(n).toDense)(
+    ).treeAggregate(Vectors.zeros(n).toDense)(
       seqOp = (sum1, sum2) => {
         // Add the intermediate sum vectors.
         BLAS.axpy(1.0, sum2, sum1)
@@ -77,5 +78,5 @@ class LinopMatrix(@transient private val matrix: DMatrix)
     )
   }
 
-  override def t: LinearOperator[DenseVector, DVector] = new Adjoint(matrix)
+  override def t: LinearOperator[DenseVector, DVector] = new LinopMatrix(matrix)
 }

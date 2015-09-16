@@ -18,8 +18,13 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 /**
- * Evaluation mode.
- * @param f Whether to compute the function value.
- * @param minimizer Whether to compute the prox function minimizer.
+ * The function evaluation mode for a ProxCapableFunction. A ProxCapableFunction may be evaluated to
+ * find the prox minimizer and/or the function value at the prox minimizer. A ProxMode argument is
+ * used to specify whether to compute the minimizer and/or the function value.
+ *
+ * @param f Compute the function value at the prox minimizer, if true.
+ * @param minimizer Compute the prox minimizer, if true.
+ *
+ * @see [[org.apache.spark.mllib.optimization.tfocs.ProxCapableFunction]]
  */
 case class ProxMode(f: Boolean, minimizer: Boolean)

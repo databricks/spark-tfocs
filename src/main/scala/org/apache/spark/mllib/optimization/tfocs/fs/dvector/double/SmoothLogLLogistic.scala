@@ -23,15 +23,15 @@ import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.storage.StorageLevel
 
 /**
- * The log likelihood logistic loss function applied to a DVector.
+ * The log likelihood logistic loss function:
+ *   sum_i  (y_i - 1) * mu_i * (mu_i > 0) + y_i * mu_i * (mu_i < 0) - log(1 + exp(-|mu_i|))
  *
  * @param y The observed values, labeled as binary 0/1.
- * @param mu The variable values.
  *
  * NOTE In matlab tfocs this functionality is implemented in smooth_logLLogistic.m.
  * @see [[https://github.com/cvxr/TFOCS/blob/master/smooth_logLLogistic.m]]
  */
-class SmoothLogLLogistic(y: DVector) extends SmoothFunction[DVector] with Serializable {
+class SmoothLogLLogistic(y: DVector) extends SmoothFunction[DVector] {
 
   if (y.getStorageLevel == StorageLevel.NONE) {
     y.cache()

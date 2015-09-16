@@ -24,8 +24,8 @@ import org.apache.spark.mllib.optimization.tfocs.vs.dvector.DVectorSpace
 package object dvectordouble {
 
   /*
-   * A VectorSpace for (DVector, Double) pairs. Such pairs arise when two separate functions are
-   * applied to an input value.
+   * A VectorSpace implementation for (DVector, Double) pairs. Such pairs arise when two separate
+   * functions are applied to an input value.
    */
   implicit object DVectorDoubleSpace extends VectorSpace[(DVector, Double)] {
 

@@ -24,9 +24,10 @@ import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.storage.StorageLevel
 
 /**
- * The squared error function applied to a DVector, with a constant factor of 0.5.
+ * The squared error function, with a constant factor of 0.5:
+ *   sum_i 0.5 * (x_i - x0_i) ^ 2
  *
- * @param x0 The base vector against which the squared error difference is computed.
+ * @param x0 The vector against which the squared error difference is calculated.
  *
  * NOTE In matlab tfocs this functionality is implemented in smooth_quad.m.
  * @see [[https://github.com/cvxr/TFOCS/blob/master/smooth_quad.m]]

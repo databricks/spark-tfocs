@@ -21,7 +21,9 @@ import org.apache.spark.mllib.linalg.DenseVector
 import org.apache.spark.mllib.optimization.tfocs.{ ProxCapableFunction, ProxMode, ProxValue }
 
 /**
- * A projection onto the nonnegative orthant, implemented using a zero/infinity indicator function.
+ * A projection onto the nonnegative orthant, implemented using a zero/infinity indicator function:
+ *   sum_i  0.0                if x_i >= 0.0
+ *          PositiveInfinity   otherwise
  *
  * NOTE In matlab tfocs this functionality is implemented in proj_Rplus.m.
  * @see [[https://github.com/cvxr/TFOCS/blob/master/proj_Rplus.m]]

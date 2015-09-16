@@ -22,7 +22,7 @@ import org.apache.spark.mllib.optimization.tfocs.VectorSpace
 
 package object vector {
 
-  /** A VectorSpace for DenseVectors in local memory. */
+  /** A VectorSpace implementation for DenseVectors in local memory. */
   implicit object DenseVectorSpace extends VectorSpace[DenseVector] {
 
     override def combine(alpha: Double,

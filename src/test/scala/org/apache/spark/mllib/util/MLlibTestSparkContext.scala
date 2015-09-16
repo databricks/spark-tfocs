@@ -36,6 +36,7 @@ trait MLlibTestSparkContext extends BeforeAndAfterAll { self: Suite =>
       .setMaster("local[2]")
       .setAppName("MLlibUnitTest")
     sc = new SparkContext(conf)
+    sc.setLogLevel("WARN")
     sqlContext = new SQLContext(sc)
   }
 

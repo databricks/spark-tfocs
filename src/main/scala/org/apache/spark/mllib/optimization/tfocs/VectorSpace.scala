@@ -21,19 +21,39 @@ import org.apache.spark.mllib.linalg.{ DenseVector, Vector }
 import org.apache.spark.rdd.RDD
 
 /**
- * A trait for a vector space supporting a few basic linear algebra operations.
+ * A vector space trait with support for computing linear combinations and inner products.
  *
- * @tparam X A type representing a vector.
+ * @tparam X A type representing a vector in the vector space.
  */
 trait VectorSpace[X] {
 
-  /** Compute a linear combination of two vectors. */
+  /**
+   * Compute a linear combination of two vectors alpha * a + beta * b.
+   *
+   * @param alpha The first scalar coefficient.
+   * @param a The first vector.
+   * @param beta The second scalar coefficient.
+   * @param b The second vector.
+   *
+   * @return The computed linear combination.
+   */
   def combine(alpha: Double, a: X, beta: Double, b: X): X
 
-  /** Compute the inner product of two vectors. */
+  /**
+   * Compute the inner product of two vectors.
+   *
+   * @param a The first vector.
+   * @param b The second vector.
+   *
+   * @return The computed inner product.
+   */
   def dot(a: X, b: X): Double
 
-  /** Cache a vector. */
+  /**
+   * Cache a vector for for efficient access later.
+   *
+   * @param a The vector to cache.
+   */
   def cache(a: X): Unit = {}
 }
 

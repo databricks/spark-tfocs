@@ -17,9 +17,12 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-/** Helpers to perform validation when zipping two iterators. */
+/**
+ * Helpers to perform validation when zipping two iterators, available using an implicit conversion.
+ */
 private[tfocs] class CheckedIteratorFunctions[A](self: Iterator[A]) {
 
+  /** Zip two iterators, validating that the iterators are the same size. */
   def checkedZip[B](that: Iterator[B]): Iterator[(A, B)] =
     new Iterator[(A, B)] {
       def hasNext: Boolean = (self.hasNext, that.hasNext) match {

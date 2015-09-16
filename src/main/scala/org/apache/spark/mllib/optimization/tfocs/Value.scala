@@ -18,10 +18,13 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 /**
- * Evaluation result.
+ * The function evaluation result for a SmoothFunction. A SmoothFunction may be evaluated to find
+ * the value and/or gradient at a specified point. A Value encapsulates these evaluation results.
  *
- * @param f An optional function value.
- * @param g An optional function gradient value.
- * @tparam X Type representing a vector.
+ * @param f The function value, if computed.
+ * @param g The function gradient, if computed.
+ * @tparam A type representing a vector.
+ *
+ * @see [[org.apache.spark.mllib.optimization.tfocs.SmoothFunction]]
  */
 case class Value[X](f: Option[Double], g: Option[X])

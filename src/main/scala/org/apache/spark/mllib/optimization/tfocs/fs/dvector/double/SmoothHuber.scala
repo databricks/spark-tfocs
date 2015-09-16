@@ -23,15 +23,18 @@ import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.storage.StorageLevel
 
 /**
- * The Huber loss function applied to a DVector.
+ * The Huber loss function, corresponding to the adjusted l2 loss when the magnitude is <= tau
+ * and to the adjusted l1 loss when the magnitude is > tau:
+ *   sum_i  0.5 * ((x_i - x0_i) ^ 2) / tau   if |x_i - x0_i| <= tau
+ *          |x_i - x0_i| - tau / 2           if |x_i - x0_i| >  tau
  *
- * @param x0 The vector against which loss should be computed.
- * @param tau The huber loss parameter.
+ * @param x0 The vector against which the loss should be computed.
+ * @param tau The Huber loss parameter.
  *
  * NOTE In matlab tfocs this functionality is implemented in smooth_huber.m.
  * @see [[https://github.com/cvxr/TFOCS/blob/master/smooth_huber.m]]
  */
-class SmoothHuber(x0: DVector, tau: Double) extends SmoothFunction[DVector] with Serializable {
+class SmoothHuber(x0: DVector, tau: Double) extends SmoothFunction[DVector] {
 
   if (x0.getStorageLevel == StorageLevel.NONE) {
     x0.cache()
@@ -40,6 +43,7 @@ class SmoothHuber(x0: DVector, tau: Double) extends SmoothFunction[DVector] with
   override def apply(x: DVector, mode: Mode): Value[DVector] = {
 
     val diff = x.diff(x0)
+    val tau = this.tau
 
     // If both f and g are requested then diff will be read twice, so cache it.
     if (mode.f && mode.g) diff.cache()
@@ -50,7 +54,7 @@ class SmoothHuber(x0: DVector, tau: Double) extends SmoothFunction[DVector] with
       // per-element pipelining.
       Some(diff.aggregateElements(0.0)(
         seqOp = (sum, diff_i) => {
-          // Find the huber loss, corresponding to the adjusted l2 loss when the magnitude is <= tau
+          // Find the Huber loss, corresponding to the adjusted l2 loss when the magnitude is <= tau
           // and to the adjusted l1 loss when the magnitude is > tau.
           val huberValue = if (math.abs(diff_i) <= tau) {
             0.5 * diff_i * diff_i / tau
@@ -65,7 +69,7 @@ class SmoothHuber(x0: DVector, tau: Double) extends SmoothFunction[DVector] with
     }
 
     val g = if (mode.g) {
-      // Compute the huber loss gradient elementwise.
+      // Compute the Huber loss gradient elementwise.
       Some(diff.mapElements(diff_i => diff_i / math.max(math.abs(diff_i), tau)))
     } else {
       None

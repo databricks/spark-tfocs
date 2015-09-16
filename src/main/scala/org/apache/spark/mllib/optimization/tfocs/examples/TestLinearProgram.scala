@@ -22,7 +22,7 @@ import scala.util.Random
 import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.SolverSLP
-import org.apache.spark.mllib.optimization.tfocs.fs.dvector.vector.LinopMatrix
+import org.apache.spark.mllib.optimization.tfocs.fs.dvector.vector.LinopMatrixAdjoint
 import org.apache.spark.mllib.random.{ RandomDataGenerator, RandomRDDs }
 import org.apache.spark.mllib.rdd.RandomVectorRDD
 import org.apache.spark.{ SparkConf, SparkContext }
@@ -78,7 +78,7 @@ object TestLinearProgram {
     val c = RandomRDDs.normalRDD(sc, n, 0, rnd.nextLong).glom.map(new DenseVector(_))
 
     // Compute 'b' using the starting 'x' vector.
-    val b = new LinopMatrix(A)(x)
+    val b = new LinopMatrixAdjoint(A)(x)
 
     val mu = 1e-2
     val x0 = sc.parallelize(new Array[Double](n)).glom.map(new DenseVector(_))

@@ -18,16 +18,26 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 /**
- * A trait for linear operators supporting application of an operator and of its adjoint.
+ * A linear operator trait, with support for applying the operator and getting its adjoint.
  *
  * @tparam X Type representing an input vector.
  * @tparam Y Type representing an output vector.
  */
 trait LinearOperator[X, Y] {
 
-  /** Evaluates this operator at x. */
+  /**
+   * Apply the operator.
+   *
+   * @param x The vector on which to apply the operator.
+   *
+   * @return The result of applying the operator on x.
+   */
   def apply(x: X): Y
 
-  /** The adjoint of this operator. */
+  /**
+   * Find the operator's adjoint.
+   *
+   * @return The operator's adjoint.
+   */
   def t: LinearOperator[Y, X]
 }

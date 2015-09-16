@@ -63,7 +63,7 @@ object TestLASSO {
 
     // Generate the actual 'x' vector, including 'k' nonzero values.
     val x = Vectors.zeros(n).toDense
-    for (i <- rnd.shuffle(1 to n).take(k)) {
+    for (i <- rnd.shuffle(0 to n - 1).take(k)) {
       x.values(i) = rnd.nextGaussian
     }
 

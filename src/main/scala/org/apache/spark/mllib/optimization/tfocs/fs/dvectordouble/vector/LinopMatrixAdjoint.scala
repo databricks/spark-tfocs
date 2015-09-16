@@ -18,8 +18,8 @@
 package org.apache.spark.mllib.optimization.tfocs.fs.dvectordouble.vector
 
 import org.apache.spark.mllib.linalg.{ BLAS, DenseVector }
-import org.apache.spark.mllib.optimization.tfocs.fs.dvector.vector.{ LinopMatrix => Delegate }
-import org.apache.spark.mllib.optimization.tfocs.fs.vector.dvectordouble.{ LinopMatrix => Adjoint }
+import org.apache.spark.mllib.optimization.tfocs.fs.dvector.vector.{ LinopMatrixAdjoint => Delegate }
+import org.apache.spark.mllib.optimization.tfocs.fs.vector.dvectordouble.LinopMatrix
 import org.apache.spark.mllib.optimization.tfocs.LinearOperator
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 
@@ -29,8 +29,8 @@ import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
  * NOTE In matlab tfocs this functionality is implemented in linop_stack.m.
  * @see [[https://github.com/cvxr/TFOCS/blob/master/private/linop_stack.m]]
  */
-class LinopMatrix(private val A: DMatrix, private val b: DenseVector)
-    extends LinearOperator[(DVector, Double), DenseVector] with Serializable {
+class LinopMatrixAdjoint(private val A: DMatrix, private val b: DenseVector)
+    extends LinearOperator[(DVector, Double), DenseVector] {
 
   private val delegate = new Delegate(A)
 
@@ -40,5 +40,5 @@ class LinopMatrix(private val A: DMatrix, private val b: DenseVector)
     ret
   }
 
-  override def t: LinearOperator[DenseVector, (DVector, Double)] = new Adjoint(A, b)
+  override def t: LinearOperator[DenseVector, (DVector, Double)] = new LinopMatrix(A, b)
 }

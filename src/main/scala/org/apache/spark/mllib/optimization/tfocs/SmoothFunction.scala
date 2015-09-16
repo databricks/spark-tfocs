@@ -18,12 +18,12 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 /**
- * A trait for smooth functions, with support for evaluating the function and computing its
- * gradient.
+ * A smooth function trait, with support for evaluating a function and computing its gradient.
  *
- * @tparam X Type representing a vector on which to evaluate the function.
+ * @tparam X A type representing a vector on which to evaluate the function.
  */
 trait SmoothFunction[X] {
+
   /**
    * Evaluates this function at x and returns the function value and gradient, depending on the mode
    * specified.
@@ -31,12 +31,19 @@ trait SmoothFunction[X] {
    * @param x The vector on which to evaluate the function.
    * @param mode The computation mode. If mode.f is true, the function value is returned. If mode.g
    *        is true, the function gradient is returned.
-   * @return A Value containing the function value and/or gradient, depending on the 'mode'
-   *         parameter. The function value is contained in value.f, while the gradient is contained
-   *         in value.g.
+   *
+   * @return A Value containing the function value and/or gradient, depending on which are requested
+   *         in the 'mode' parameter. The function value is contained in value.f, while the gradient
+   *         is contained in value.g.
    */
   def apply(x: X, mode: Mode): Value[X]
 
-  /** Evaluates the function on vector x. */
+  /**
+   * Evaluate the function at x.
+   *
+   * @param x The vector on which to evaluate the function.
+   *
+   * @return The value of the function.
+   */
   def apply(x: X): Double = apply(x, Mode(f = true, g = false)).f.get
 }

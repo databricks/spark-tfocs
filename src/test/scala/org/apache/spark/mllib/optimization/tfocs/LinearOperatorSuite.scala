@@ -23,9 +23,9 @@ import org.apache.spark.SparkException
 import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.fs.vector.dvector.LinopMatrix
-import org.apache.spark.mllib.optimization.tfocs.fs.dvector.vector.{ LinopMatrix => LinopMatrixAdjoint }
+import org.apache.spark.mllib.optimization.tfocs.fs.dvector.vector.LinopMatrixAdjoint
 import org.apache.spark.mllib.optimization.tfocs.fs.vector.dvectordouble.{ LinopMatrix => LinopMatrixVector }
-import org.apache.spark.mllib.optimization.tfocs.fs.dvectordouble.vector.{ LinopMatrix => LinopMatrixVectorAdjoint }
+import org.apache.spark.mllib.optimization.tfocs.fs.dvectordouble.vector.{ LinopMatrixAdjoint => LinopMatrixVectorAdjoint }
 import org.apache.spark.mllib.util.MLlibTestSparkContext
 
 class LinearOperatorSuite extends FunSuite with MLlibTestSparkContext {

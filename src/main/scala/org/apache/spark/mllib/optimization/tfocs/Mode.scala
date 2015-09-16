@@ -18,8 +18,13 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 /**
- * Evaluation mode.
- * @param f Whether to compute the function value.
- * @param g Whether to compute the function gradient.
+ * The function evaluation mode for a SmoothFunction. A SmoothFunction may be evaluated to find the
+ * value and/or gradient at a specified point. A Mode argument is used to specify whether to compute
+ * the value and/or the gradient.
+ *
+ * @param f Compute the function value, if true.
+ * @param g Compute the function gradient, if true.
+ *
+ * @see [[org.apache.spark.mllib.optimization.tfocs.SmoothFunction]]
  */
 case class Mode(f: Boolean, g: Boolean)

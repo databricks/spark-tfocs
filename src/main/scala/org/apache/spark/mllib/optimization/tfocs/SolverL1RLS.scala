@@ -25,7 +25,7 @@ import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.mllib.optimization.tfocs.vs.dvector._
 import org.apache.spark.mllib.optimization.tfocs.vs.vector._
 
-/** Helper to solve lasso regression problems using the tfocs implementation. */
+/** Helper to solve lasso regression problems. */
 object SolverL1RLS {
 
   /**
@@ -36,19 +36,21 @@ object SolverL1RLS {
    * @param A The design matrix, represented as a DMatrix.
    * @param b The observed values, represented as a DVector.
    * @param lambda The regularization term.
-   * @param x0 The starting weights.
+   * @param x0 Initial value of 'x'.
    *
    * @return A tuple containing two elements. The first element is a vector containing the optimized
-   *         'x' values. The second element contains the objective function history.
+   *         'x' value. The second element contains the objective function history.
    *
    * @see [[org.apache.spark.mllib.optimization.tfocs.examples.TestLASSO]]
    * for example usage of this function.
    *
    * NOTE The distributed matrix 'A', represented as a DMatrix, and the distributed vector 'b',
-   * represented as a DVector, supplied to this function must be consistently partitioned. The 'A'
-   * matrix must contain the same number of rows in each partition as the 'b' vector has numeric
-   * values in the corresponding partition. More information about the storage formats used by
-   * DVector and DMatrix can be found in the documentation for these types in VectorSpace.scala
+   * represented as a DVector, must be consistently partitioned. The 'A' matrix must contain the
+   * same number of rows in each partition as the 'b' vector has numeric values in the corresponding
+   * partition.
+   *
+   * @see [[org.apache.spark.mllib.optimization.tfocs.VectorSpace]] for more information about the
+   * storage formats used by DVector and DMatrix.
    *
    * NOTE In matlab tfocs this functionality is implemented in solver_L1RLS.m.
    * @see [[https://github.com/cvxr/TFOCS/blob/master/solver_L1RLS.m]]

@@ -23,14 +23,17 @@ import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.storage.StorageLevel
 
 /**
- * Implements the proximity operator for the function rplus(x) + c' * x, where rplus(x) is a
- * zero/infinity indicator function for the nonnegative orthant.
+ * The proximity operator for the function:
+ *   rplus(x) + c' * x
+ * where rplus(x) is a zero/infinity indicator function for the nonnegative orthant.
+ *
+ * @param c The shift vector.
  *
  * NOTE In matlab tfocs this functionality is implemented in prox_shift.m and proj_Rplus.m.
  * @see [[https://github.com/cvxr/TFOCS/blob/master/prox_shift.m]]
  * @see [[https://github.com/cvxr/TFOCS/blob/master/proj_Rplus.m]]
  */
-class ProxShiftRPlus(c: DVector) extends ProxCapableFunction[DVector] with Serializable {
+class ProxShiftRPlus(c: DVector) extends ProxCapableFunction[DVector] {
 
   if (c.getStorageLevel == StorageLevel.NONE) {
     c.cache()
@@ -48,6 +51,6 @@ class ProxShiftRPlus(c: DVector) extends ProxCapableFunction[DVector] with Seria
     val rPlus = x.aggregateElements(0.0)(
       seqOp = (sum, x_i) => sum + (if (x_i < 0) Double.PositiveInfinity else 0.0),
       combOp = _ + _)
-    rPlus + x.dot(c)
+    if (rPlus.isPosInfinity) Double.PositiveInfinity else x.dot(c)
   }
 }

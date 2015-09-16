@@ -63,7 +63,7 @@ class SolverSLPSuite extends FunSuite with MLlibTestSparkContext {
       0.256371934668609, 1.691983132986665, 0.059837119884475, -0.221648385883038,
       -0.298134575377277, -1.913199010346937, 0.745084172661387), 2).glom.map(
       new DenseVector(_))
-    val mu = 0.01
+    val mu = 1e-2
     val x0 = sc.parallelize(Array.fill(10)(0.0), 2).glom.map(new DenseVector(_))
     val z0 = Vectors.zeros(5).toDense
     val dualTolCheckInterval = 1 // Matlab tfocs checks for convergence on every iteration.
