@@ -19,7 +19,7 @@ package org.apache.spark.mllib.optimization.tfocs.examples
 
 import scala.util.Random
 
-import org.apache.spark.mllib.linalg.{ BLAS, Vectors }
+import org.apache.spark.mllib.linalg.{ BLAS, DenseVector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.SolverL1RLS
 import org.apache.spark.mllib.random.RandomRDDs
 import org.apache.spark.{ SparkConf, SparkContext }
@@ -57,9 +57,9 @@ object TestLASSO {
         sum1
       })
     val A = unnormalizedA.map(rowA =>
-      Vectors.dense(rowA.toArray.zip(AColumnNormSq.toArray).map(_ match {
+      Vectors.dense(rowA.toArray.zip(AColumnNormSq.toArray).map {
         case (rowA_i, normsq_i) => rowA_i / math.sqrt(normsq_i)
-      })))
+      }))
 
     // Generate the actual 'x' vector, including 'k' nonzero values.
     val x = Vectors.zeros(n).toDense
@@ -68,13 +68,13 @@ object TestLASSO {
     }
 
     // Generate the 'b' vector using the design matrix and weights, adding gaussian noise.
-    val bOriginal = Vectors.dense(A.map(rowA => BLAS.dot(rowA, x)).collect).toDense
+    val bOriginal = new DenseVector(A.map(rowA => BLAS.dot(rowA, x)).collect)
     val snr = 30 // SNR in dB
     val sigma =
       math.pow(10, ((10 * math.log10(math.pow(Vectors.norm(bOriginal, 2), 2) / n) - snr) / 20))
     val b = sc.parallelize(bOriginal.values.map(_ + sigma * rnd.nextGaussian))
       .glom
-      .map(Vectors.dense(_).toDense)
+      .map(new DenseVector(_))
 
     // Set 'lambda' using the noise standard deviation.
     val lambda = 2 * sigma * math.sqrt(2 * math.log(n))

@@ -22,7 +22,7 @@ import java.io.File
 import com.joptimizer.optimizers.LPStandardConverter
 import com.joptimizer.util.MPSParser
 
-import org.apache.spark.mllib.linalg.{ Vector, Vectors }
+import org.apache.spark.mllib.linalg.{ DenseVector, Vector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.SolverSLP
 import org.apache.spark.{ SparkConf, SparkContext }
@@ -56,14 +56,14 @@ object TestMPSLinearProgram {
       parser.getUb)
 
     // Convert the parameters of the linear program to the proper formats.
-    val c = sc.parallelize(converter.getStandardC.toArray).glom.map(Vectors.dense(_).toDense)
+    val c = sc.parallelize(converter.getStandardC.toArray).glom.map(new DenseVector(_))
     val A = sc.parallelize(converter.getStandardA.toArray.transpose.map(
       Vectors.dense(_).toSparse: Vector))
-    val b = Vectors.dense(converter.getStandardB.toArray).toDense
+    val b = new DenseVector(converter.getStandardB.toArray)
     val n = converter.getStandardN
 
     val mu = 1e-2
-    val x0 = sc.parallelize(new Array[Double](n)).glom.map(Vectors.dense(_).toDense)
+    val x0 = sc.parallelize(new Array[Double](n)).glom.map(new DenseVector(_))
     val z0 = Vectors.zeros(b.size).toDense
 
     // Solve the linear program using SolverSLP, finding the optimal x vector 'optimalX'.
