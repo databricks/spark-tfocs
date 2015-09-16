@@ -38,7 +38,8 @@ object SolverL1RLS {
    * @param lambda The regularization term.
    * @param x0 The starting weights.
    *
-   * @return The optimized weights returned by the solver.
+   * @return A tuple containing two elements. The first element is a vector containing the optimized
+   *         'x' values. The second element contains the objective function history.
    *
    * @see [[org.apache.spark.mllib.optimization.tfocs.examples.TestLASSO]]
    * for example usage of this function.
