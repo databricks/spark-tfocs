@@ -6,7 +6,7 @@ version := "1.0-SNAPSHOT"
 
 spName := "databricks/spark-tfocs"
 
-sparkVersion := "1.4.1"
+sparkVersion := "1.5.0"
 
 sparkComponents += "mllib"
 
