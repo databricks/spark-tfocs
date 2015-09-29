@@ -28,10 +28,8 @@ import org.apache.spark.storage.StorageLevel
  * @param objectiveF The prox capable function.
  * @param mu The smoothing parameter.
  * @param x0 The prox center.
- * @tparam X Type representing a vector on which the function operates.
- *
- * TODO Make the implementation generic to support arbitrary vector spaces, using the VectorSpace
- * abstraction.
+ * @param vs A VectorSpace implementation supporting operations on vectors of type X.
+ * @tparam X A type representing a vector on which the function operates.
  *
  * NOTE In matlab tfocs this functionality is implemented in tfocs_SCD.m.
  * @see [[https://github.com/cvxr/TFOCS/blob/master/tfocs_SCD.m]]

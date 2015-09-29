@@ -29,10 +29,10 @@ object SolverSLP {
   /**
    * Solve the smoothed standard form linear program:
    *   minimize c' * x + 0.5 * mu * ||x - x0||_2^2
-   *   s.t.     A' * x == b and x >= 0
+   *   s.t.     A' * x == b' and x >= 0
    *
-   * @param c Objective function component vector. Represented as a distributed vector, DVector. See
-   *        note below.
+   * @param c Objective function coefficient vector. Represented as a distributed vector, DVector.
+   *        See note below.
    * @param A Constraint coefficient matrix. 'A' is an m by n matrix, where m is the length of x and
    *        n is the length of b. That is, the transpose of A may be multiplied by x. 'A' is
    *        represented as a distributed matrix, DMatrix. See note below.
@@ -47,18 +47,20 @@ object SolverSLP {
    * @param dualTolCheckInterval The iteration interval between convergence tests in TFOCS.optimize.
    *        Used to throttle potentially slow convergence tests.
    *
-   * @return A tuple comprising the solution x vector and the loss history of the optimization run.
+   * @return A tuple containing two elements. The first element is a vector containing the optimized
+   *         'x' value. The second element contains the internal objective function history.
    *
    * @see [[org.apache.spark.mllib.optimization.tfocs.examples.TestLinearProgram]]
    * @see [[org.apache.spark.mllib.optimization.tfocs.examples.TestMPSLinearProgram]]
    * for example usage of this function.
    *
    * NOTE The distributed matrix, represented as a DMatrix, and the distributed vectors, represented
-   * as DVectors, supplied to this function must be consistently partitioned. The DVectors must
-   * all contain the same number of numeric values in each partition. And the DMatrix must contain
-   * the same number of rows in each partition as the DVectors have numeric values. More information
-   * about the storage formats used by DVector and DMatrix can be found in the documentation for
-   * these types in VectorSpace.scala
+   * as DVectors, must be consistently partitioned. The DVectors must all contain the same number of
+   * numeric values in each partition. And the DMatrix must contain the same number of rows in each
+   * partition as the DVectors have numeric values.
+   *
+   * @see [[org.apache.spark.mllib.optimization.tfocs.VectorSpace]] for more information about the
+   * storage formats used by DVector and DMatrix.
    *
    * NOTE In matlab tfocs this functionality is implemented in solver_sLP.m and
    * test_LinearProgram.m.
@@ -80,7 +82,7 @@ object SolverSLP {
     val minusB = b.copy
     BLAS.scal(-1.0, minusB)
     TFOCS_SCD.optimize(new ProxShiftRPlus(c),
-      new LinopMatrix(A, minusB),
+      new LinopMatrixAdjoint(A, minusB),
       new ProxZero(),
       mu,
       x0,

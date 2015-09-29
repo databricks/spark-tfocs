@@ -55,7 +55,7 @@ object TestMPSLinearProgram {
       parser.getLb,
       parser.getUb)
 
-    // Convert the parameters of the linear program to the proper formats.
+    // Convert the parameters of the linear program to spark tfocs compatible formats.
     val c = sc.parallelize(converter.getStandardC.toArray).glom.map(new DenseVector(_))
     val A = sc.parallelize(converter.getStandardA.toArray.transpose.map(
       Vectors.dense(_).toSparse: Vector))

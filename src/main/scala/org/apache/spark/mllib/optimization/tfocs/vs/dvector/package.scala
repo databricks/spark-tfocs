@@ -26,7 +26,7 @@ import org.apache.spark.storage.StorageLevel
 
 package object dvector {
 
-  /** A VectorSpace for DVector vectors. */
+  /** A VectorSpace implementation for (distributed) DVector vectors. */
   implicit object DVectorSpace extends VectorSpace[DVector] {
 
     override def combine(alpha: Double, a: DVector, beta: Double, b: DVector): DVector =

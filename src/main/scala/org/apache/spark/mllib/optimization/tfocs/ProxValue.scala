@@ -18,10 +18,14 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 /**
- * Evaluation result for a prox capable function.
+ * The evaluation result of a ProxCapableFunction. A ProxCapableFunction may be evaluated to find
+ * the prox minimizer and/or the function value at the prox minimizer. A ProxValue encapsulates
+ * these evaluation results.
  *
- * @param f An optional function value.
- * @param minimizer An optional prox function minimizer value.
- * @tparam X Type representing a vector.
+ * @param f The function value at the prox minimizer, if computed.
+ * @param minimizer The prox minimizer, if computed.
+ * @tparam X A type representing a vector.
+ *
+ * @see [[org.apache.spark.mllib.optimization.tfocs.ProxCapableFunction]]
  */
 case class ProxValue[X](f: Option[Double], minimizer: Option[X])

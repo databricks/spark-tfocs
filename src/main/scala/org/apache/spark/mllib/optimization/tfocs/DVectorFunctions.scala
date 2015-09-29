@@ -27,14 +27,20 @@ import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
  */
 private[tfocs] class DVectorFunctions(self: DVector) {
 
-  def mapElements(f: Double => Double): DVector = self.map(x => new DenseVector(x.values.map(f)))
+  /** Apply a function to each DVector element. */
+  def mapElements(f: Double => Double): DVector =
+    self.map(part => new DenseVector(part.values.map(f)))
 
+  /**
+   * Zip a DVector's elements with those of another DVector and apply a function to each pair of
+   * elements.
+   */
   def zipElements(other: DVector, f: (Double, Double) => Double): DVector =
     self.zip(other).map {
       case (selfPart, otherPart) =>
         if (selfPart.size != otherPart.size) {
-          throw new IllegalArgumentException("Can only zipElements DVectors with the same number " +
-            "of elements")
+          throw new IllegalArgumentException("Can only call zipElements on DVectors with the " +
+            "same number of elements and consistent partitions.")
         }
         // NOTE DenseVectors are assumed here (not sparse safe).
         val ret = new Array[Double](selfPart.size)
@@ -46,21 +52,24 @@ private[tfocs] class DVectorFunctions(self: DVector) {
         new DenseVector(ret)
     }
 
+  /** Apply aggregation functions to the DVector elements. */
   def aggregateElements(zeroValue: Double)(
     seqOp: (Double, Double) => Double,
     combOp: (Double, Double) => Double): Double =
     self.aggregate(zeroValue)(
-      seqOp = (aggregate, vector) => {
+      seqOp = (aggregate, part) => {
         // NOTE DenseVectors are assumed here (not sparse safe).
-        val vectorAggregate = vector.values.aggregate(zeroValue)(seqop = seqOp, combop = combOp)
-        combOp(vectorAggregate, aggregate)
+        val partAggregate = part.values.aggregate(zeroValue)(seqop = seqOp, combop = combOp)
+        combOp(partAggregate, aggregate)
       },
       combOp = combOp)
 
+  /** Collect the DVector elements to a local array. */
   def collectElements: Array[Double] =
     // NOTE DenseVectors are assumed here (not sparse safe).
     self.collect().flatMap(_.values)
 
+  /** Compute the elementwise difference of this DVector with another. */
   def diff(other: DVector): DVector =
     self.zip(other).map {
       case (selfPart, otherPart) =>
@@ -69,8 +78,10 @@ private[tfocs] class DVectorFunctions(self: DVector) {
         ret
     }
 
+  /** Sum the DVector's elements. */
   def sum: Double = self.aggregate(0.0)((sum, x) => sum + x.values.sum, _ + _)
 
+  /** Compute the dot product with another DVector. */
   def dot(other: DVector): Double =
     self.zip(other).aggregate(0.0)((sum, x) => sum + BLAS.dot(x._1, x._2), _ + _)
 }

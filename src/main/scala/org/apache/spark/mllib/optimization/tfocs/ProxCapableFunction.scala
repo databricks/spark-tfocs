@@ -18,19 +18,21 @@
 package org.apache.spark.mllib.optimization.tfocs
 
 /**
- * A trait for prox capable functions which support efficient proximity minimization, as expressed
+ * A prox capable function trait with support for efficient proximity minimization, as expressed
  * by the proximity operator:
  *   x = prox_h(z, t) = argmin_x(h(x) + 0.5 * ||x - z||_2^2 / t)
  *
- * Both the minimizing x value and the function value h(x) may be computed, depending on the
- * mode specified.
+ * The minimizing x value and/or the function value h(x) may be computed, depending on the
+ * specified ProxMode.
  *
  * @tparam X A type representing a vector on which to evaluate the function.
+ *
+ * @see [[http://cvxr.com/tfocs/doc]] for more information on prox capable functions.
  */
 trait ProxCapableFunction[X] {
 
   /**
-   * Evaluate the proximity operator prox_h at z with parameter t, returning both x and h(x)
+   * Evaluate the proximity operator prox_h at z with parameter t, returning x and/or h(x)
    * depending on the mode specified.
    *
    * @param z The vector on which to evaluate the proximity operator.
@@ -38,13 +40,19 @@ trait ProxCapableFunction[X] {
    * @param mode The computation mode. If mode.f is true, h(x) is returned. If mode.minimizer is
    *        true, x is returned.
    *
-   * @return A Value containing x, the vector minimizing the proximity function prox_h, and/or h(x),
-   *         the function value at x. The exact list of values computed and returned depends on the
-   *         attributes of the supplied 'mode' parameter. The returned Value contains h(x) in its
-   *         'f' attribute, while x is contained in the 'minimizer' attribute.
+   * @return A ProxValue containing x, the vector minimizing the proximity function prox_h, and/or
+   *         h(x), the function value at x. The exact set of values computed and returned depends on
+   *         the attributes of the supplied 'mode' parameter. The returned Value contains h(x) in
+   *         its 'f' attribute, while x is contained in the 'minimizer' attribute.
    */
   def apply(z: X, t: Double, mode: ProxMode): ProxValue[X]
 
-  /** Evaluate the function h(x) at x. Does not perform proximity minimization. */
+  /**
+   * Evaluate the function h(x) at x. Does not perform proximity minimization.
+   *
+   * @param x The vector on which to evaluate the function h.
+   *
+   * @return The value of h(x).
+   */
   def apply(x: X): Double
 }

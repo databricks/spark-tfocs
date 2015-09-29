@@ -19,7 +19,7 @@ package org.apache.spark.mllib.optimization.tfocs.fs.vector.dvectordouble
 
 import org.apache.spark.mllib.linalg.BLAS
 import org.apache.spark.mllib.linalg.DenseVector
-import org.apache.spark.mllib.optimization.tfocs.fs.dvectordouble.vector.{ LinopMatrix => Adjoint }
+import org.apache.spark.mllib.optimization.tfocs.fs.dvectordouble.vector.LinopMatrixAdjoint
 import org.apache.spark.mllib.optimization.tfocs.fs.vector.dvector.{ LinopMatrix => Delegate }
 import org.apache.spark.mllib.optimization.tfocs.LinearOperator
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
@@ -38,5 +38,5 @@ class LinopMatrix(private val A: DMatrix, private val b: DenseVector)
 
   override def apply(x: DenseVector): (DVector, Double) = (delegate.apply(x), BLAS.dot(b, x))
 
-  override def t: LinearOperator[(DVector, Double), DenseVector] = new Adjoint(A, b)
+  override def t: LinearOperator[(DVector, Double), DenseVector] = new LinopMatrixAdjoint(A, b)
 }

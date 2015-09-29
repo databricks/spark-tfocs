@@ -27,15 +27,15 @@ import org.apache.spark.mllib.optimization.tfocs.vs.dvectordouble._
 object TFOCS_SCD {
 
   /**
-   * Smoothed conic dual form of TFOCS, for problems with non trivial linear operators.
+   * The smoothed conic dual form of TFOCS, for problems with non trivial linear operators.
+   *
    * Solves a conic problem using the smoothed conic dual approach, in the following conic form:
    *   minimize objectiveF(x) + 0.5 * mu(x-x0).^2
    *   s.t.     affineF(x) \in \cK
-   * The user is responsible for constructing the dual proximity function so that the dual can be
-   * described by the saddle point problem:
-   *   maximize_z inf_x [ objectiveF(x)+0.5*mu(x-x0).^2-<affineF(x),z> ] -dualproxF(z)
    *
-   * TODO Support general vector spaces via type parameters.
+   * The user is responsible for constructing the dual proximity function so that the dual can be
+   * described using the saddle point problem:
+   *   maximize_z inf_x [objectiveF(x) + 0.5 * mu(x - x0).^2 - <affineF(x), z>] - dualproxF(z)
    *
    * @param objectiveF Prox capable objective function.
    * @param affineF Linear component of the objective function.
@@ -48,12 +48,16 @@ object TFOCS_SCD {
    * @param initialTol The convergence tolerance threshold for the first continuation iteration.
    * @param dualTolCheckInterval The iteration interval between convergence tests in TFOCS.optimize.
    *        Used to throttle potentially slow convergence tests.
+   * @param cols The VectorSpace used for computation on column vectors.
    *
-   * @return A tuple comprising the solution x vector and the loss history of the optimization run.
+   * @return A tuple containing two elements. The first element is a vector containing the optimized
+   *         'x' value. The second element contains the objective function history.
    *
    * NOTE In matlab tfocs this functionality is implemented in tfocs_SCD.m and continuation.m.
    * @see [[https://github.com/cvxr/TFOCS/blob/master/tfocs_SCD.m]]
    * @see [[https://github.com/cvxr/TFOCS/blob/master/continuation.m]]
+   *
+   * TODO Support general vector spaces via type parameters.
    */
   def optimize(
     objectiveF: ProxCapableFunction[DVector],
@@ -72,10 +76,12 @@ object TFOCS_SCD {
     var z0Iter = z0
     var x = x0
     var xOld = x0
-    var L0 = 1.0
-    var hist: Array[Double] = new Array(0)
+    var L = 1.0
+    var hist = new Array[Double](0)
 
+    // Find betaTol, the factor by which to decrease the convergence tolerance on each iteration.
     val betaTol = math.exp(math.log(initialTol / tol) / (numContinuations - 1))
+    // Find the initial convergence tolerance.
     var iterTol = tol * math.pow(betaTol, numContinuations)
 
     var hasConverged = false
@@ -90,7 +96,7 @@ object TFOCS_SCD {
         z0Iter,
         TFOCSMaxIterations,
         iterTol,
-        L0,
+        L,
         true,
         dualTolCheckInterval)
 
@@ -98,7 +104,7 @@ object TFOCS_SCD {
       x = optimizationData.dual.get._1
       cols.cache(x)
       hist ++= optimizationData.lossHistory
-      L0 = optimizationData.L
+      L = optimizationData.L
 
       // Update the prox center, applying acceleration to x.
       x0Iter = cols.combine(1.0 + (nIter - 1.0) / (nIter + 2.0), x,

@@ -22,12 +22,12 @@ import org.apache.spark.mllib.optimization.tfocs.{ ProxCapableFunction, ProxMode
 
 /**
  * A projection onto a simple box defined by upper and lower limits on each vector element,
- * implemented using a zero/infinity indicator function.
+ * implemented using a zero/infinity indicator function:
+ *   sum_i  0.0                if l_i <= x_i <= u_i
+ *          PositiveInfinity   otherwise
  *
- * @param l A vector describing the box's lower bound. If x is within the box then x_i >= l_i for
- *        all i.
- * @param u A vector describing the box's upper bound. If x is within the box then x_i <= u_i for
- *        all i.
+ * @param l A vector describing the box's lower bound.
+ * @param u A vector describing the box's upper bound.
  *
  * NOTE In matlab tfocs this functionality is implemented in proj_box.m.
  * @see [[https://github.com/cvxr/TFOCS/blob/master/proj_box.m]]

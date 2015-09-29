@@ -3,25 +3,27 @@
 Spark TFOCS is an implementation of the [TFOCS](http://cvxr.com/tfocs/) convex solver for [Apache
 Spark](http://spark.apache.org/).
 
-The original TFOCS library provides Matlab building blocks to construct efficient solvers for convex
+The original Matlab TFOCS library provides building blocks to construct efficient solvers for convex
 problems. Spark TFOCS implements a useful subset of this functionality, in Scala, and is designed to
 operate on distributed data using the Spark cluster computing framework. Spark TFOCS includes
 support for:
 
 * Convex optimization using Nesterov's accelerated method (Auslender and Teboulle variant)
-* Adaptive Step size using backtracking Lipschitz estimation
+* Adaptive step size using backtracking Lipschitz estimation
 * Automatic acceleration restart using the gradient test
 * Linear operator structure optimizations
 * Smoothed Conic Dual (SCD) formulation solver, with continuation support
 * Smoothed linear program solver
-* Multiple data distribution patterns. (Currently support is only implemented for RDD[Vector] row
+* Multiple data distribution patterns. (Support is currently only implemented for RDD[Vector] row
   matrices.)
 
 ## Examples
 
-Solve the l1 regularized least squares problem `0.5 * ||A * x' - b||_2^2 + lambda * ||x||_1`
+Solve the l1 regularized least squares problem `0.5 * ||A * x' - b||_2^2 + lambda * ||x||_1` (lasso
+linear regression):
 
-    import org.apache.spark.mllib.optimization.tfocs.examples.SolverL1RLS
+    import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
+    import org.apache.spark.mllib.optimization.tfocs.SolverL1RLS
     val A = sc.parallelize(Array(
       Vectors.dense(-0.8307, 0.2722, 0.1947, -0.3545, 0.3944, -0.5557, -0.2904, 0.5337, -0.1190,
         0.0657),
@@ -34,33 +36,47 @@ Solve the l1 regularized least squares problem `0.5 * ||A * x' - b||_2^2 + lambd
       Vectors.dense(-0.2341, -0.5792, 0.3272, -0.7748, 0.6396, -0.7910, -0.6239, -0.6901, 0.0249,
         0.6624)), 2)
     val b = sc.parallelize(Array(0.1614, -0.1662, 0.4224, -0.2945, -0.3866), 2).glom.map(
-      Vectors.dense(_))
+      new DenseVector(_))
     val lambda = 0.0298
-    val x0 = Vectors.zeros(10)
+    val x0 = Vectors.zeros(10).toDense
 
     SolverL1RLS.run(A, b, lambda, x0)
 
-Solve the smoothed standard form linear program
+Alternatively, the above optimization may be executed using TFOCS optimizer directly rather than
+with the `SolverL1RLS` helper implementation:
+
+    import org.apache.spark.mllib.optimization.tfocs.fs.dvector.double._
+    import org.apache.spark.mllib.optimization.tfocs.fs.vector.double._
+    import org.apache.spark.mllib.optimization.tfocs.fs.vector.dvector._
+    import org.apache.spark.mllib.optimization.tfocs.TFOCS
+    import org.apache.spark.mllib.optimization.tfocs.vs.dvector._
+    import org.apache.spark.mllib.optimization.tfocs.vs.vector._
+
+    TFOCS.optimize(new SmoothQuad(b), new LinopMatrix(A), new ProxL1(lambda), x0)
+
+To solve the smoothed standard form linear program:
 
     minimize c' * x + 0.5 * mu * ||x - x0||_2^2
-    s.t.     A' * x == b and x >= 0
+    s.t.     A' * x == b' and x >= 0
 
 <!-- code block break -->
 
+    import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
     import org.apache.spark.mllib.optimization.tfocs.SolverSLP
-    val c = sc.parallelize(Array(-1.078275146772097, -0.368208440839284, 0.680376092886272,
-      0.256371934668609, 1.691983132986665, 0.059837119884475, -0.221648385883038,
-      -0.298134575377277, -1.913199010346937, 0.745084172661387), 2).glom.map(Vectors.dense(_))
     val A = sc.parallelize(Array(Vectors.zeros(5),
       Vectors.sparse(5, Seq((1, 0.632374636716572), (4, 0.198436985375040))),
       Vectors.sparse(5, Seq((2, 0.179885783103202))), Vectors.zeros(5), Vectors.zeros(5),
       Vectors.zeros(5), Vectors.zeros(5), Vectors.sparse(5, Seq((1, 0.014792694748719))),
       Vectors.zeros(5), Vectors.sparse(5, Seq((3, 0.244326895623829)))), 2)
-    var b = Vectors.dense(0, 7.127414296861894, 1.781441255102280, 2.497425876822379,
-      2.186136752456199)
-    val mu = 0.01
-    val x0 = sc.parallelize(Array.fill(10)(0.0), 2).glom.map(Vectors.dense(_))
-    val z0 = Vectors.zeros(5)
+    var b = new DenseVector(Array(0, 7.127414296861894, 1.781441255102280, 2.497425876822379,
+      2.186136752456199))
+    val c = sc.parallelize(Array(-1.078275146772097, -0.368208440839284, 0.680376092886272,
+      0.256371934668609, 1.691983132986665, 0.059837119884475, -0.221648385883038,
+      -0.298134575377277, -1.913199010346937, 0.745084172661387), 2).glom.map(
+      new DenseVector(_))
+    val mu = 1e-2
+    val x0 = sc.parallelize(Array.fill(10)(0.0), 2).glom.map(new DenseVector(_))
+    val z0 = Vectors.zeros(5).toDense
 
     SolverSLP.run(c, A, b, mu, x0, z0)
 
@@ -73,22 +89,23 @@ Solve the smoothed standard form linear program
 
 ## Software Architecture Overview
 
-The primary types used by the Spark TFOCS library are:
+The primary types used in the Spark TFOCS library are:
 
-* `DenseVector` A wrapper around an Array[Double], with support for vector operations. (Imported
-  from org.apache.spark.mllib.linalg)
+* `DenseVector` A wrapper around `Array[Double]` with support for vector operations. (Imported
+  from `org.apache.spark.mllib.linalg`)
 
-* `DVector` A distributed vector, stored as an RDD[DenseVector], where each partition comprises a
-  single DenseVector containing a slice of the complete distributed vector. More information is
-  available in VectorSpace.scala.
+* `DVector` A distributed vector, stored as an `RDD[DenseVector]`, where each partition comprises a
+  single `DenseVector` containing a slice of the complete distributed vector. More information is
+  available in `org.apache.spark.mllib.optimization.tfocs.VectorSpace`.
 
-* `DMatrix` A distributed matrix, stored as an RDD[Vector], where each (possibly sparse) Vector
-  represents a row of the matrix. More information is available in VectorSpace.scala.
+* `DMatrix` A distributed matrix, stored as an `RDD[Vector]`, where each (possibly sparse) `Vector`
+  represents a row of the matrix. More information is available in
+  `org.apache.spark.mllib.optimization.tfocs.VectorSpace`.
 
 The primary abstractions in the Spark TFOCS library are:
 
-* `VectorSpace` A basic vector space api with support for computing linear combinations and dot
-  products. This abstraction supports local computation and also distributed computation using
+* `VectorSpace` A basic vector space interface with support for computing linear combinations and
+  dot products. This abstraction supports local computation and also distributed computation using
   implementations based on different data distribution models.
 
 * `LinearOperator` An interface for performing a linear mapping from one vector space to another.

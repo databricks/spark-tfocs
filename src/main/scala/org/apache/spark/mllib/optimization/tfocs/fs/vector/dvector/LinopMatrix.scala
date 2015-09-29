@@ -18,7 +18,7 @@
 package org.apache.spark.mllib.optimization.tfocs.fs.vector.dvector
 
 import org.apache.spark.mllib.linalg.{ BLAS, DenseVector }
-import org.apache.spark.mllib.optimization.tfocs.fs.dvector.vector.{ LinopMatrix => Adjoint }
+import org.apache.spark.mllib.optimization.tfocs.fs.dvector.vector.LinopMatrixAdjoint
 import org.apache.spark.mllib.optimization.tfocs.LinearOperator
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.storage.StorageLevel
@@ -43,5 +43,5 @@ class LinopMatrix(private val matrix: DMatrix) extends LinearOperator[DenseVecto
       Iterator.single(new DenseVector(partitionRows.map(row => BLAS.dot(row, bcX.value)).toArray)))
   }
 
-  override def t: LinearOperator[DVector, DenseVector] = new Adjoint(matrix)
+  override def t: LinearOperator[DVector, DenseVector] = new LinopMatrixAdjoint(matrix)
 }
