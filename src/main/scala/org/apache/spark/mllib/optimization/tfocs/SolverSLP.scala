@@ -17,7 +17,8 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-import org.apache.spark.mllib.linalg.{ BLAS, DenseVector }
+import org.apache.spark.mllib.linalg.{ BLAS, DenseVector, Vectors }
+import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.VectorSpace._
 import org.apache.spark.mllib.optimization.tfocs.fs.dvector.double._
 import org.apache.spark.mllib.optimization.tfocs.fs.dvectordouble.vector._
@@ -38,8 +39,9 @@ object SolverSLP {
    *        represented as a distributed matrix, DMatrix. See note below.
    * @param b Constraint coefficient vector.
    * @param mu Smoothing parameter.
-   * @param x0 Starting x value. Represented as a distributed vector, DVector. See note below.
-   * @param z0 Starting dual (z) value.
+   * @param x0 Starting x value. Represented as a distributed vector, DVector. See note below. A
+   *        default value will be used if not provided.
+   * @param z0 Starting dual (z) value. A default value will be used if not provided.
    * @param numContinuations The maximum number of continuations to use in the TFOCS_SCD
    *        implementation.
    * @param tol The convergence tolerance threshold.
@@ -72,8 +74,8 @@ object SolverSLP {
     A: DMatrix,
     b: DenseVector,
     mu: Double,
-    x0: DVector,
-    z0: DenseVector,
+    x0: Option[DVector] = None,
+    z0: Option[DenseVector] = None,
     numContinuations: Int = 10,
     tol: Double = 1e-4,
     initialTol: Double = 1e-3,
@@ -85,8 +87,8 @@ object SolverSLP {
       new LinopMatrixAdjoint(A, minusB),
       new ProxZero(),
       mu,
-      x0,
-      z0,
+      x0.getOrElse(c.mapElements(_ => 0.0)),
+      z0.getOrElse(Vectors.zeros(b.size).toDense),
       numContinuations,
       tol,
       initialTol,

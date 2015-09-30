@@ -17,7 +17,7 @@
 
 package org.apache.spark.mllib.optimization.tfocs
 
-import org.apache.spark.mllib.linalg.DenseVector
+import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
 import org.apache.spark.mllib.optimization.tfocs.fs.dvector.double._
 import org.apache.spark.mllib.optimization.tfocs.fs.vector.double._
 import org.apache.spark.mllib.optimization.tfocs.fs.vector.dvector._
@@ -36,7 +36,7 @@ object SolverL1RLS {
    * @param A The design matrix, represented as a DMatrix.
    * @param b The observed values, represented as a DVector.
    * @param lambda The regularization term.
-   * @param x0 Initial value of 'x'.
+   * @param x0 Initial value of 'x'. A default value will be used if not provided.
    *
    * @return A tuple containing two elements. The first element is a vector containing the optimized
    *         'x' value. The second element contains the objective function history.
@@ -55,9 +55,15 @@ object SolverL1RLS {
    * NOTE In matlab tfocs this functionality is implemented in solver_L1RLS.m.
    * @see [[https://github.com/cvxr/TFOCS/blob/master/solver_L1RLS.m]]
    */
-  def run(A: DMatrix, b: DVector, lambda: Double, x0: DenseVector): (DenseVector, Array[Double]) = {
+  def run(A: DMatrix,
+    b: DVector,
+    lambda: Double,
+    x0: Option[DenseVector] = None): (DenseVector, Array[Double]) = {
     val (x, TFOCS.OptimizationData(lossHistory, _, _)) =
-      TFOCS.optimize(new SmoothQuad(b), new LinopMatrix(A), new ProxL1(lambda), x0)
+      TFOCS.optimize(new SmoothQuad(b),
+        new LinopMatrix(A),
+        new ProxL1(lambda),
+        x0.getOrElse(Vectors.zeros(A.first().size).toDense))
     (x, lossHistory)
   }
 }

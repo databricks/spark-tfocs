@@ -38,11 +38,10 @@ linear regression):
     val b = sc.parallelize(Array(0.1614, -0.1662, 0.4224, -0.2945, -0.3866), 2).glom.map(
       new DenseVector(_))
     val lambda = 0.0298
-    val x0 = Vectors.zeros(10).toDense
 
-    SolverL1RLS.run(A, b, lambda, x0)
+    SolverL1RLS.run(A, b, lambda)
 
-Alternatively, the above optimization may be executed using TFOCS optimizer directly rather than
+Alternatively, the above optimization may be executed using the TFOCS optimizer directly rather than
 with the `SolverL1RLS` helper implementation:
 
     import org.apache.spark.mllib.optimization.tfocs.fs.dvector.double._
@@ -51,6 +50,7 @@ with the `SolverL1RLS` helper implementation:
     import org.apache.spark.mllib.optimization.tfocs.TFOCS
     import org.apache.spark.mllib.optimization.tfocs.vs.dvector._
     import org.apache.spark.mllib.optimization.tfocs.vs.vector._
+    val x0 = Vectors.zeros(10).toDense
 
     TFOCS.optimize(new SmoothQuad(b), new LinopMatrix(A), new ProxL1(lambda), x0)
 
@@ -75,10 +75,8 @@ To solve the smoothed standard form linear program:
       -0.298134575377277, -1.913199010346937, 0.745084172661387), 2).glom.map(
       new DenseVector(_))
     val mu = 1e-2
-    val x0 = sc.parallelize(Array.fill(10)(0.0), 2).glom.map(new DenseVector(_))
-    val z0 = Vectors.zeros(5).toDense
 
-    SolverSLP.run(c, A, b, mu, x0, z0)
+    SolverSLP.run(c, A, b, mu)
 
 ## Solvers
 
