@@ -89,7 +89,7 @@ To solve the smoothed standard form linear program:
 
 ## Software Architecture Overview
 
-The primary types used in the Spark TFOCS library are:
+The primary types used in the Spark TFOCS library are as follows:
 
 * `DenseVector` A wrapper around `Array[Double]` with support for vector operations. (Imported
   from `org.apache.spark.mllib.linalg`)
@@ -102,7 +102,7 @@ The primary types used in the Spark TFOCS library are:
   represents a row of the matrix. More information is available in
   `org.apache.spark.mllib.optimization.tfocs.VectorSpace`.
 
-The primary abstractions in the Spark TFOCS library are:
+The primary abstractions of the Spark TFOCS library are as follows:
 
 * `VectorSpace` A basic vector space interface with support for computing linear combinations and
   dot products. This abstraction supports local computation and also distributed computation using
@@ -114,6 +114,19 @@ The primary abstractions in the Spark TFOCS library are:
 
 * `ProxCapableFunction` An interface for evaluating a function and computing the minimizing value
   of its proximity operator.
+
+The following naming conventions are used in the Spark TFOCS library:
+
+* To the extent possible, classes and functions are given the same names as the corresponding
+  implementation in Matlab TFOCS.
+
+* `VectorSpace` implementations are placed in the `vs` namespace. For example the `VectorSpace` for
+  `DVector` vectors is named `vs.dvector`.
+
+* Function implementations (implementations of `LinearOperator`, `SmoothFunction`, and
+  `ProxCapableFunction`) are placed in the `fs` (function space) namespace, and are specifically
+  named according to their input and output types. For example, functions with input type `DVector`
+  and output type `Double` are placed in the `fs.dvector.double` namespace.
 
 ## TODOs
 
