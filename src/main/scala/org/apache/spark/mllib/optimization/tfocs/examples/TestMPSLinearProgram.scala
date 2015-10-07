@@ -63,11 +63,9 @@ object TestMPSLinearProgram {
     val n = converter.getStandardN
 
     val mu = 1e-2
-    val x0 = sc.parallelize(new Array[Double](n)).glom.map(new DenseVector(_))
-    val z0 = Vectors.zeros(b.size).toDense
 
     // Solve the linear program using SolverSLP, finding the optimal x vector 'optimalX'.
-    val (optimalX, _) = SolverSLP.run(c, A, b, mu, x0, z0)
+    val (optimalX, _) = SolverSLP.run(c, A, b, mu)
     println("optimalX: " + optimalX.collectElements.mkString(", "))
 
     sc.stop()

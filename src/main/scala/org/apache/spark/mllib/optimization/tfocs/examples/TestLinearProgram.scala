@@ -19,7 +19,7 @@ package org.apache.spark.mllib.optimization.tfocs.examples
 
 import scala.util.Random
 
-import org.apache.spark.mllib.linalg.{ DenseVector, Vectors }
+import org.apache.spark.mllib.linalg.DenseVector
 import org.apache.spark.mllib.optimization.tfocs.DVectorFunctions._
 import org.apache.spark.mllib.optimization.tfocs.SolverSLP
 import org.apache.spark.mllib.optimization.tfocs.fs.dvector.vector.LinopMatrixAdjoint
@@ -81,11 +81,9 @@ object TestLinearProgram {
     val b = new LinopMatrixAdjoint(A)(x)
 
     val mu = 1e-2
-    val x0 = sc.parallelize(new Array[Double](n)).glom.map(new DenseVector(_))
-    val z0 = Vectors.zeros(m).toDense
 
     // Solve the linear program using SolverSLP, finding the optimal x vector 'optimalX'.
-    val (optimalX, _) = SolverSLP.run(c, A, b, mu, x0, z0)
+    val (optimalX, _) = SolverSLP.run(c, A, b, mu)
     println("optimalX: " + optimalX.collectElements.mkString(", "))
 
     sc.stop()

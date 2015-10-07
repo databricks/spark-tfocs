@@ -61,9 +61,8 @@ class SolverL1RLSSuite extends FunSuite with MLlibTestSparkContext {
     val b = sc.parallelize(Array(0.1614, -0.1662, 0.4224, -0.2945, -0.3866), 2).glom.map(
       new DenseVector(_))
     val lambda = 0.0298
-    val x0 = Vectors.zeros(10).toDense
 
-    val (x, lossHistory) = SolverL1RLS.run(A, b, lambda, x0)
+    val (x, lossHistory) = SolverL1RLS.run(A, b, lambda)
 
     val expectedX = Vectors.dense(-0.049755786974910, 0, 0.076369527414210, 0, 0, 0, 0,
       0.111550837996771, -0.314626347477663, -0.503782689620966)

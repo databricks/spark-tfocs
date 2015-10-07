@@ -80,8 +80,7 @@ object TestLASSO {
     val lambda = 2 * sigma * math.sqrt(2 * math.log(n))
 
     // Solve the lasso problem using SolverL1RLS, finding the estimated x vector 'estimatedX'.
-    val x0 = Vectors.zeros(n).toDense
-    val (estimatedX, _) = SolverL1RLS.run(A, b, lambda, x0)
+    val (estimatedX, _) = SolverL1RLS.run(A, b, lambda)
     println("estimatedX: " + estimatedX.values.mkString(", "))
 
     sc.stop()
