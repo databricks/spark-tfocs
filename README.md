@@ -17,6 +17,11 @@ support for:
 * Multiple data distribution patterns. (Currently support is only implemented for RDD[Vector] row
   matrices.)
 
+The name "TFOCS" is being used by the original TFOCS developers, who are not involved in the
+development of this package and hence not responsible for the support.
+To report issues or request features about Spark TFOCS, please use our GitHub issues page.
+
+
 ## LASSO Example
 
 Solve the l1 regularized least squares problem `0.5 * ||A * x' - b||_2^2 + lambda * ||x||_1` (lasso
