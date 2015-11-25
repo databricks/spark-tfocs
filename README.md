@@ -17,8 +17,8 @@ support for:
 * Multiple data distribution patterns. (Currently support is only implemented for RDD[Vector] row
   matrices.)
 
-The name "TFOCS" is being used by the original TFOCS developers, who are not involved in the
-development of this package and hence not responsible for the support.
+The name "TFOCS" is being used with permission from the original TFOCS developers, who are not
+involved in the development of this package and hence not responsible for the support.
 To report issues or request features about Spark TFOCS, please use our GitHub issues page.
 
 
