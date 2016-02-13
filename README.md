@@ -1,11 +1,11 @@
-#A port of TFOCS for Apache Spark
+# TFOCS for Spark: a Community Port of TFOCS for Apache Spark
 
-This package (referred to as spark-tfocs) is an implementation of the [TFOCS](http://cvxr.com/tfocs/) convex solver for [Apache
+This package is an implementation of the [TFOCS](http://cvxr.com/tfocs/) convex solver for [Apache
 Spark](http://spark.apache.org/).
 
 The original Matlab TFOCS library provides building blocks to construct efficient solvers for convex
-problems. spark-tfocs implements a useful subset of this functionality, in Scala, and is designed to
-operate on distributed data using the Spark cluster computing framework. spark-tfocs includes
+problems. TFOCS for Spark implements a useful subset of this functionality, in Scala, and is designed to
+operate on distributed data using the Spark cluster computing framework. TFOCS for Spark includes
 support for:
 
 * Convex optimization using Nesterov's accelerated method (Auslender and Teboulle variant)
@@ -19,7 +19,7 @@ support for:
 
 The name "TFOCS" is being used with permission from the original TFOCS developers, who are not
 involved in the development of this package and hence not responsible for the support.
-To report issues or request features about spark-tfocs, please use our GitHub issues page.
+To report issues or request features about TFOCS for Spark, please use our GitHub issues page.
 
 
 ## LASSO Example
@@ -97,7 +97,7 @@ To solve the smoothed standard form linear program:
 
 ## Software Architecture Overview
 
-The primary types used in the spark-tfocs library are as follows:
+The primary types used in the TFOCS for Spark library are as follows:
 
 * `DenseVector` A wrapper around `Array[Double]` with support for vector operations. (Imported
   from `org.apache.spark.mllib.linalg`)
@@ -110,7 +110,7 @@ The primary types used in the spark-tfocs library are as follows:
   represents a row of the matrix. More information is available in
   `org.apache.spark.mllib.optimization.tfocs.VectorSpace`.
 
-The primary abstractions of the spark-tfocs library are as follows:
+The primary abstractions of the TFOCS for Spark library are as follows:
 
 * `VectorSpace` A basic vector space interface with support for computing linear combinations and
   dot products. This abstraction supports local computation as well as distributed computation using
@@ -123,7 +123,7 @@ The primary abstractions of the spark-tfocs library are as follows:
 * `ProxCapableFunction` An interface for evaluating a function and computing the minimizing value
   of its proximity operator.
 
-The following naming conventions are used in the spark-tfocs library:
+The following naming conventions are used in this library:
 
 * To the extent possible, classes and functions are given the same name as the corresponding
   implementation in Matlab TFOCS.
