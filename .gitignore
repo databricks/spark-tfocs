@@ -1,4 +1,5 @@
 .idea/
+.bsp/
 .idea_modules/
 project/target
 target/
